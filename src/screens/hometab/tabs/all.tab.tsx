@@ -1,0 +1,155 @@
+import React, { useCallback } from "react";
+import { StyleSheet } from "react-native";
+import { RootStackScreenProps } from "src/types/navigation.types";
+import { ScrollView, Text } from "src/components/themed.components";
+import layoutConstants from "src/constants/layout.constants";
+import fontUtils from "src/utils/font.utils";
+import { FlatList } from "react-native-gesture-handler";
+import { ApartmentListingItem } from "src/components/apartments.components";
+import { JobListingItem } from "src/components/jobs.components";
+import { useGetProvidersQuery } from "src/services/redux/apis";
+import { AppRefreshControl } from "src/components/refreshcontrol.component";
+import { PropertyObjectType } from "src/types/properties.types";
+import { JobObjectType } from "src/types/jobs.types";
+import {
+  useGetPropertiesQuery,
+  useGetJobsQuery,
+} from "src/services/redux/apis/unauth.api.requests";
+
+export default function AllTabScreen({
+  navigation,
+  route,
+}: RootStackScreenProps<"HomeTabNavigator">) {
+  const {
+    isFetching,
+    data: propertiesData,
+    refetch,
+  } = useGetPropertiesQuery({
+    type: "apartment",
+    status: "listed",
+  });
+
+  const {
+    isFetching: fetchingFiveStars,
+    data: fiveStarHotels,
+    refetch: refetchFiveStars,
+  } = useGetPropertiesQuery({
+    averagerating: "3,5",
+    type: "hotel",
+    status: "listed",
+  });
+
+  const {
+    isFetching: fetchingJobs,
+    data: jobsData,
+    refetch: refetchJobs,
+  } = useGetJobsQuery({});
+
+  const {
+    isFetching: fetchingProviders,
+    data: providersData,
+    refetch: refetchProviders,
+  } = useGetProvidersQuery({});
+
+  const renderApartments = useCallback(
+    ({ item, index }: { item: PropertyObjectType; index: number }) => (
+      <ApartmentListingItem {...item} />
+    ),
+    [],
+  );
+
+  const renderJobs = useCallback(
+    ({ item, index }: { item: JobObjectType; index: number }) => (
+      <JobListingItem {...item} />
+    ),
+    [],
+  );
+
+  return (
+    <ScrollView style={styles.container}>
+      <Text
+        size={fontUtils.h(12)}
+        fontFamily={fontUtils.manrope_bold}
+        mb={fontUtils.h(15)}
+      >
+        Popular Apartments
+      </Text>
+      <FlatList
+        data={propertiesData?.data || []}
+        renderItem={renderApartments}
+        refreshControl={
+          <AppRefreshControl refreshing={isFetching} onRefresh={refetch} />
+        }
+        horizontal
+      />
+      {fiveStarHotels?.data?.length > 0 ? (
+        <Text
+          size={fontUtils.h(12)}
+          fontFamily={fontUtils.manrope_bold}
+          mb={fontUtils.h(15)}
+          mt={fontUtils.h(30)}
+        >
+          5-star Hotels near you
+        </Text>
+      ) : null}
+      <FlatList
+        data={fiveStarHotels?.data || []}
+        renderItem={renderApartments}
+        refreshControl={
+          <AppRefreshControl
+            refreshing={fetchingFiveStars}
+            onRefresh={refetchFiveStars}
+          />
+        }
+        horizontal
+      />
+      {/* <Text
+        size={fontUtils.h(12)}
+        fontFamily={fontUtils.manrope_bold}
+        mb={fontUtils.h(15)}
+        mt={fontUtils.h(30)}
+      >
+        Service Providers near you
+      </Text>
+      <FlatList
+        data={providersData?.data || []}
+        renderItem={renderProviders}
+        refreshControl={
+          <AppRefreshControl
+            refreshing={fetchingProviders}
+            onRefresh={refetchProviders}
+          />
+        }
+        horizontal
+      /> */}
+      {/* <Text
+        size={fontUtils.h(12)}
+        fontFamily={fontUtils.manrope_bold}
+        mb={fontUtils.h(15)}
+        mt={fontUtils.h(30)}
+      >
+        Jobs for you
+      </Text>
+      <FlatList
+        data={jobsData?.data || []}
+        renderItem={renderJobs}
+        refreshControl={
+          <AppRefreshControl
+            refreshing={fetchingJobs}
+            onRefresh={refetchJobs}
+          />
+        }
+        horizontal
+      /> */}
+    </ScrollView>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    paddingTop: fontUtils.h(20),
+    paddingHorizontal: layoutConstants.mainViewHorizontalPadding,
+  },
+  apartmentItemViewStyle: {},
+});
