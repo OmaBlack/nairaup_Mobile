@@ -1,25 +1,33 @@
-import React, { useState } from "react";
-import { Platform, StyleSheet, useWindowDimensions, View } from "react-native";
+import React, { useRef, useState } from "react";
+import {
+  NativeScrollEvent,
+  NativeSyntheticEvent,
+  Platform,
+  ScrollView as RNScrollView,
+  StyleSheet,
+  useWindowDimensions,
+  View,
+} from "react-native";
 import { RootStackScreenProps } from "src/types/navigation.types";
 import {
   SafeAreaView,
-  ScrollView,
   Text,
+  TouchableOpacity,
   ViewableAvatar,
 } from "src/components/themed.components";
 import { colorPrimary, colorWhite } from "src/constants/colors.constants";
-import fontUtils, { deviceHeight } from "src/utils/font.utils";
+import fontUtils, { deivceWidth } from "src/utils/font.utils";
 import layoutConstants from "src/constants/layout.constants";
-import { Avatar, Icon } from "@rneui/themed";
+import { Icon } from "@rneui/themed";
 import { Ionicons, MaterialIcons } from "@expo/vector-icons";
 import { ScreenHeader } from "src/components/headers.components";
 import { Button } from "src/components/buttons.components";
-import { TabBar, TabView } from "react-native-tab-view";
 import PortfolioTabScreen from "./tabs/portfolio.tab";
 import ReviewTabScreen from "./tabs/reviews.tab";
 import ProjectTabScreen from "./tabs/projects.tab";
 import { CapitalizeFirstLetter } from "src/utils/app.utils";
 import { useConnection } from "src/hooks/apis/useChat";
+import { FlatList, ScrollView } from "react-native-gesture-handler";
 
 const routes = [
   { key: "portfolio", title: "Portfolio" },
@@ -34,7 +42,8 @@ export default function ProviderViewScreen({
   const layout = useWindowDimensions();
   const { createConnection, loading } = useConnection();
   const profile = route.params.profile;
-  const [index, setIndex] = useState(0);
+  const [slide, setSlide] = useState(0);
+  const scrollViewRef = useRef<RNScrollView>(null);
 
   const doSendMessage = async (notification: any) => {
     const connection = await createConnection({
@@ -52,9 +61,25 @@ export default function ProviderViewScreen({
     }
   };
 
+  const onScrollTab = (e: NativeSyntheticEvent<NativeScrollEvent>) => {
+    const position = e.nativeEvent.contentOffset.y;
+    if (position < 300)
+      scrollViewRef.current?.scrollTo({
+        y: position,
+        animated: false,
+      });
+  };
+
   return (
     <SafeAreaView style={styles.container}>
-      <ScrollView>
+      <ScrollView
+        //@ts-ignore
+        ref={scrollViewRef}
+        stickyHeaderIndices={[0]}
+        style={{
+          paddingBottom: 50,
+        }}
+      >
         <ScreenHeader
           title={""}
           titleColor={colorWhite}
@@ -64,43 +89,51 @@ export default function ProviderViewScreen({
             paddingBottom: fontUtils.h(30),
           }}
         />
-        <View
-          style={[
-            layoutConstants.styles.rowView,
-            layoutConstants.styles.justifyContentBetween,
-            styles.headerViewStyle,
-          ]}
-        >
-          <ViewableAvatar
-            title={
-              profile.avatarurl && profile.avatarurl !== ""
-                ? undefined
-                : `${profile.firstname.substring(
-                    0,
-                    1,
-                  )}${profile.lastname.substring(0, 1)}`
-            }
-            rounded
-            source={
-              profile.avatarurl && profile.avatarurl !== ""
-                ? {
-                    uri: profile.avatarurl,
-                  }
-                : undefined
-            }
-            size={fontUtils.h(45)}
-            containerStyle={styles.avatarContainerStyle}
-          />
-          <Text size={fontUtils.h(12)}>
-            <Ionicons
-              name="location"
-              color={"#F5D066"}
-              size={fontUtils.h(15)}
-            />{" "}
-            {`${CapitalizeFirstLetter(
-              `${profile.city}`,
-            )}, ${CapitalizeFirstLetter(`${profile.country}`)}`}
-          </Text>
+        <View style={{ zIndex: 10 }}>
+          <View
+            style={[
+              layoutConstants.styles.rowView,
+              layoutConstants.styles.justifyContentBetween,
+              styles.headerViewStyle,
+            ]}
+          >
+            <ViewableAvatar
+              title={
+                profile.avatarurl && profile.avatarurl !== ""
+                  ? undefined
+                  : `${profile.firstname.substring(
+                      0,
+                      1,
+                    )}${profile.lastname.substring(0, 1)}`
+              }
+              rounded
+              source={
+                profile.avatarurl && profile.avatarurl !== ""
+                  ? {
+                      uri: profile.avatarurl,
+                    }
+                  : undefined
+              }
+              size={fontUtils.h(45)}
+              containerStyle={styles.avatarContainerStyle}
+            />
+            {profile?.address ? (
+              <Text size={fontUtils.h(12)}>
+                <Ionicons
+                  name="location"
+                  color={"#F5D066"}
+                  size={fontUtils.h(15)}
+                />{" "}
+                {`${CapitalizeFirstLetter(
+                  profile?.city
+                    ? profile?.city
+                    : profile?.state
+                    ? profile?.state
+                    : "",
+                )}, ${CapitalizeFirstLetter(`${profile?.country}`)}`}
+              </Text>
+            ) : null}
+          </View>
         </View>
         <View style={styles.contentStyle}>
           <View style={[layoutConstants.styles.rowView]}>
@@ -127,17 +160,19 @@ export default function ProviderViewScreen({
             ]}
           >
             {[
-              {
-                label: "Average Price",
-                value: "N10,000",
-                style: {
-                  borderRightWidth: 1,
-                  borderColor: colorWhite,
-                },
-              },
+              // {
+              //   label: "Average Price",
+              //   value: "N10,000",
+              //   style: {
+              //     borderRightWidth: 1,
+              //     borderColor: colorWhite,
+              //   },
+              // },
               {
                 label: "Years of Experience",
-                value: `${profile.yearsofexperience}+`,
+                value: profile?.yearsofexperience
+                  ? `${profile.yearsofexperience}+`
+                  : 0,
                 style: {
                   marginHorizontal: fontUtils.w(5),
                 },
@@ -162,17 +197,56 @@ export default function ProviderViewScreen({
                   color={colorWhite}
                   fontFamily={fontUtils.manrope_medium}
                   mb={fontUtils.h(10)}
+                  align="center"
                 >
                   {s.value}
                 </Text>
-                <Text size={fontUtils.h(10)} color={colorWhite}>
+                <Text align="center" size={fontUtils.h(10)} color={colorWhite}>
                   {s.label}
                 </Text>
               </View>
             ))}
           </View>
         </View>
-        <TabView
+        <FlatList
+          data={routes}
+          renderItem={({ item, index }) => (
+            <TouchableOpacity
+              onPress={() => setSlide(index)}
+              style={[
+                {
+                  backgroundColor: "transparent",
+                  // height: fontUtils.h(40),
+                  marginTop: fontUtils.h(20),
+                  flex: 1,
+                  width: deivceWidth / 3,
+                  alignItems: "center",
+                  paddingBottom: fontUtils.h(10),
+                  borderBottomWidth: index === slide ? fontUtils.w(2) : 0,
+                  borderColor: colorPrimary,
+                },
+              ]}
+            >
+              <Text size={fontUtils.h(10)}>{item.title}</Text>
+            </TouchableOpacity>
+          )}
+          horizontal
+          showsHorizontalScrollIndicator={false}
+        />
+        {slide === 0 ? (
+          <PortfolioTabScreen
+            onScroll={onScrollTab}
+            profileId={`${profile.id}`}
+          />
+        ) : slide === 1 ? (
+          <ReviewTabScreen profileid={profile.id} onScroll={onScrollTab} />
+        ) : (
+          <ProjectTabScreen
+            profileId={`${profile.id}`}
+            onScroll={onScrollTab}
+          />
+        )}
+        {/* <TabView
           navigationState={{ index, routes }}
           onIndexChange={setIndex}
           initialLayout={{ width: layout.width }}
@@ -195,15 +269,30 @@ export default function ProviderViewScreen({
           renderScene={({ route: tabRoute }) => {
             switch (tabRoute.key) {
               case "portfolio":
-                return <PortfolioTabScreen />;
+                return (
+                  <PortfolioTabScreen
+                    onScroll={onScrollTab}
+                    profileId={`${profile.id}`}
+                  />
+                );
               case "reviews":
-                return <ReviewTabScreen profileid={profile.id} />;
+                return (
+                  <ReviewTabScreen
+                    profileid={profile.id}
+                    onScroll={onScrollTab}
+                  />
+                );
               default:
-                return <ProjectTabScreen />;
+                return (
+                  <ProjectTabScreen
+                    profileId={`${profile.id}`}
+                    onScroll={onScrollTab}
+                  />
+                );
             }
           }}
           style={{ height: deviceHeight - fontUtils.h(150) }}
-        />
+        /> */}
       </ScrollView>
       <Button
         title={`Message ${profile.firstname}`}
@@ -257,5 +346,6 @@ const styles = StyleSheet.create({
   summaryItemStyle: {
     flex: 1,
     alignItems: "center",
+    paddingHorizontal: fontUtils.w(7),
   },
 });

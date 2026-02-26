@@ -54,6 +54,7 @@ export default function NotificationsScreen({
         refreshControl={
           <AppRefreshControl refreshing={isFetching} onRefresh={refetch} />
         }
+        showsVerticalScrollIndicator={false}
       />
     </SafeAreaView>
   );

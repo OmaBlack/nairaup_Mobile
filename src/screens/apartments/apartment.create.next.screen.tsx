@@ -46,6 +46,8 @@ export default function ApartmentCreateNextScreen({
   const [features, setFeatures] = useState<number[]>([]);
   const [images, setImages] = useState<ImagePickerAsset[]>([]);
   const [address, setAddress] = useState("");
+  const [city, setCity] = useState("");
+  const [state, setState] = useState("");
   const [locationAddress, setLocationAddress] = useState({
     geolocation: "",
     state: "",
@@ -80,10 +82,15 @@ export default function ApartmentCreateNextScreen({
           const _address = addr?.formatted_address || "Address not found";
           setAddress(_address);
           const _addressArr = _address?.split(",");
+          const _city = removePostalCodes(
+            _addressArr?.length > 4
+              ? `${_addressArr[_addressArr?.length - 4]?.trim()}`
+              : `${_addressArr[_addressArr?.length - 3]?.trim()}`,
+          );
+          setCity(_city);
+          setState(`${_addressArr[_addressArr?.length - 2]?.trim()}`);
           setLocationAddress({
-            city: removePostalCodes(
-              `${_addressArr[_addressArr?.length - 3]?.trim()}`,
-            ),
+            city: _city,
             state: `${_addressArr[_addressArr?.length - 2]?.trim()}`,
             country: `${_addressArr[_addressArr?.length - 1]?.trim()}`,
             // placeid: `${addr?.place_id}`,
@@ -97,8 +104,8 @@ export default function ApartmentCreateNextScreen({
     }
   }, [location]);
 
-  const { isFetching, data } = useGetPropertyTypesAndCategoriesQuery(null);
-  const { isFetching: fetchingFeatures, data: featuresData } =
+  const { isLoading, data } = useGetPropertyTypesAndCategoriesQuery(null);
+  const { isLoading: fetchingFeatures, data: featuresData } =
     useGetPropertyFeaturesQuery(null);
 
   const doNext = () => {
@@ -114,6 +121,8 @@ export default function ApartmentCreateNextScreen({
         images,
         type: type === "hotel" ? "hotel" : propertyType,
         ...locationAddress,
+        city,
+        state,
       },
     });
   };
@@ -145,9 +154,12 @@ export default function ApartmentCreateNextScreen({
                 items={data?.data?.types || []}
                 value={propertyType}
                 onSelectItem={(e: any) => setPropertyType(e?.value)}
-                loading={isFetching}
+                loading={isLoading}
                 listMode="MODAL"
                 wrapperStyle={styles.selectWrapperStyle}
+                modalContentContainerStyle={{
+                  paddingTop: Platform.select({ android: fontUtils.h(50) }),
+                }}
               />
             </>
           ) : null}
@@ -181,13 +193,18 @@ export default function ApartmentCreateNextScreen({
                 items={data?.data?.categories || []}
                 value={propertyCategory}
                 onSelectItem={(e: any) => setPropertyCategory(e?.value)}
-                loading={isFetching}
+                loading={isLoading}
                 listMode="MODAL"
                 wrapperStyle={styles.selectWrapperStyle}
+                modalContentContainerStyle={{
+                  paddingTop: Platform.select({ android: fontUtils.h(50) }),
+                }}
               />
             </>
           ) : null}
           <Input label="Location" value={address} onChangeText={setAddress} />
+          <Input label="Enter city" value={city} onChangeText={setCity} />
+          <Input label="Enter state" value={state} onChangeText={setState} />
           {type === "apartment" ? (
             <Input
               label="Enter price"

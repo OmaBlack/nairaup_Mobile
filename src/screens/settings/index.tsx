@@ -1,5 +1,5 @@
 import React from "react";
-import { Alert, StyleSheet } from "react-native";
+import { StyleSheet } from "react-native";
 import { RootStackScreenProps } from "src/types/navigation.types";
 import {
   SafeAreaView,
@@ -19,36 +19,16 @@ import HelpCenterIcon from "src/components/svgs/help.center";
 import LogoutIcon from "src/components/svgs/logout";
 import { useAppDispatch } from "src/hooks/useReduxHooks";
 import { logout } from "src/services/redux/slices/auth";
-import { colorDanger } from "src/constants/colors.constants";
-import useUser from "src/hooks/apis/useUser";
 
 export default function SettingsScreen({
   navigation,
   route,
 }: RootStackScreenProps<"SettingsScreen">) {
   const { theme } = useAppTheme();
-  const { deleteMyAccount } = useUser();
   const dispatch = useAppDispatch();
   const doLogout = () => {
     dispatch(logout());
   };
-
-  const doDeleteAccount = () =>
-    Alert.alert(
-      "Delete Account",
-      "Are you sure you want to delete your account?\nThis action can't be undone and your account will be deleted immeidately.",
-      [
-        {
-          text: "Cancel",
-          isPreferred: true,
-        },
-        {
-          text: "Yes, delete",
-          style: "destructive",
-          onPress: async () => await deleteMyAccount(),
-        },
-      ],
-    );
 
   return (
     <SafeAreaView style={[styles.container]}>
@@ -93,28 +73,29 @@ export default function SettingsScreen({
         {
           label: "Password and Security",
           icon: <PasswordSecurityIcon />,
-          onPress: () => navigation.navigate("PasswordEditScreen"),
+          onPress: () => navigation.navigate("PasswordSecurityScreen"),
         },
         {
           label: "Help Center",
           icon: <HelpCenterIcon />,
+          onPress: () => navigation.navigate("HelpCenterScreen"),
         },
         {
           label: "Log Out",
           icon: <LogoutIcon />,
           onPress: doLogout,
         },
-        {
-          label: "Delete my account",
-          icon: (
-            <Ionicons
-              name="trash-bin"
-              color={colorDanger}
-              size={fontUtils.h(20)}
-            />
-          ),
-          onPress: doDeleteAccount,
-        },
+        // {
+        //   label: "Delete my account",
+        //   icon: (
+        //     <Ionicons
+        //       name="trash-bin"
+        //       color={colorDanger}
+        //       size={fontUtils.h(20)}
+        //     />
+        //   ),
+        //   onPress: doDeleteAccount,
+        // },
       ].map((menu) => (
         <TouchableOpacity
           onPress={menu.onPress}

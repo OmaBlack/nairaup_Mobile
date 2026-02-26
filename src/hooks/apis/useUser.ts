@@ -2,17 +2,23 @@ import { useState } from "react";
 import { requestClan } from "src/services/request";
 import { ProfileObjectType } from "src/types/app.types";
 import { NetworkResponse } from "src/types/request.types";
-import { useAppDispatch } from "../useReduxHooks";
-import { logout, updateUserProfileData } from "src/services/redux/slices/auth";
+import { useAppDispatch, useAppSelector } from "../useReduxHooks";
+import {
+  logout,
+  updateUserData,
+  updateUserProfileData,
+} from "src/services/redux/slices/auth";
 
 const useUser = () => {
   const [loading, setLoading] = useState(false);
   const dispatch = useAppDispatch();
+  const { user } = useAppSelector((state) => state.auth);
 
   const updateProfile = async (
     data: Partial<ProfileObjectType> & {
       resumeurl?: string;
       portfoliourls?: string;
+      mobile?: string;
     },
     hideToast?: boolean,
     cb = () => {},
@@ -27,7 +33,17 @@ const useUser = () => {
     });
     cb();
     setLoading(false);
-    if (request.code === 202) dispatch(updateUserProfileData(request.data));
+    if (request.code === 202) {
+      if (data.mobile) {
+        dispatch(
+          updateUserData({
+            ...user,
+            mobile: data.mobile,
+            profile: request.data,
+          }),
+        );
+      } else dispatch(updateUserProfileData(request.data));
+    }
     return request;
   };
 

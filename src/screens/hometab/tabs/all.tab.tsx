@@ -40,6 +40,15 @@ export default function AllTabScreen({
   });
 
   const {
+    isFetching: fetchingShortlets,
+    data: shortletsData,
+    refetch: refetchShortlets,
+  } = useGetPropertiesQuery({
+    type: "shortlet",
+    status: "listed",
+  });
+
+  const {
     isFetching: fetchingJobs,
     data: jobsData,
     refetch: refetchJobs,
@@ -66,7 +75,12 @@ export default function AllTabScreen({
   );
 
   return (
-    <ScrollView style={styles.container}>
+    <ScrollView
+      style={styles.container}
+      contentContainerStyle={{
+        paddingBottom: layoutConstants.tabBarHeight,
+      }}
+    >
       <Text
         size={fontUtils.h(12)}
         fontFamily={fontUtils.manrope_bold}
@@ -99,6 +113,27 @@ export default function AllTabScreen({
           <AppRefreshControl
             refreshing={fetchingFiveStars}
             onRefresh={refetchFiveStars}
+          />
+        }
+        horizontal
+      />
+      {shortletsData?.data?.length > 0 ? (
+        <Text
+          size={fontUtils.h(12)}
+          fontFamily={fontUtils.manrope_bold}
+          mb={fontUtils.h(15)}
+          mt={fontUtils.h(30)}
+        >
+          Shortlets around you
+        </Text>
+      ) : null}
+      <FlatList
+        data={shortletsData?.data || []}
+        renderItem={renderApartments}
+        refreshControl={
+          <AppRefreshControl
+            refreshing={fetchingShortlets}
+            onRefresh={refetchShortlets}
           />
         }
         horizontal

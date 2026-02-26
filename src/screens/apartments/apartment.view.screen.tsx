@@ -26,6 +26,7 @@ import useTransaction from "src/hooks/apis/useTransactions";
 import { useConnection } from "src/hooks/apis/useChat";
 import { SimpleImageSlider } from "@one-am/react-native-simple-image-slider";
 import { useGetPropertyQuery } from "src/services/redux/apis/unauth.api.requests";
+import { CapitalizeFirstLetter } from "src/utils/app.utils";
 
 export default function ApartmentViewScreen({
   navigation,
@@ -75,7 +76,6 @@ export default function ApartmentViewScreen({
         }),
       onLoad: (res) => console.log("WebView Loaded:", res),
       onError: (err) => {
-        console.log(err);
         Toast.show({
           type: "error",
           text1: "Payment",
@@ -183,7 +183,11 @@ export default function ApartmentViewScreen({
             features={[
               {
                 color: colorPrimary,
-                feature: `${data.address}, ${data.city}`,
+                feature: `${data.address}\n${CapitalizeFirstLetter(
+                  data.city,
+                )} ${
+                  data.state ? `, ${CapitalizeFirstLetter(data.state)}` : ``
+                }`,
                 id: -1,
                 slug: "location",
               },

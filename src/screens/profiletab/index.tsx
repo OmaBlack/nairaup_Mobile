@@ -1,18 +1,24 @@
-import React, { useState } from "react";
-import { StyleSheet, useWindowDimensions, View } from "react-native";
+import React, { useRef, useState } from "react";
+import {
+  NativeScrollEvent,
+  ScrollView as RNScrollView,
+  NativeSyntheticEvent,
+  StyleSheet,
+  useWindowDimensions,
+  View,
+} from "react-native";
 import { RootStackScreenProps } from "src/types/navigation.types";
 import {
   SafeAreaView,
-  ScrollView,
   Text,
+  TouchableOpacity,
   ViewableAvatar,
 } from "src/components/themed.components";
 import { colorPrimary, colorWhite } from "src/constants/colors.constants";
-import fontUtils, { deviceHeight } from "src/utils/font.utils";
+import fontUtils, { deivceWidth } from "src/utils/font.utils";
 import layoutConstants from "src/constants/layout.constants";
 import { Ionicons, MaterialIcons } from "@expo/vector-icons";
 import { ScreenHeader } from "src/components/headers.components";
-import { TabBar, TabView } from "react-native-tab-view";
 import PortfolioTabScreen from "../services/tabs/portfolio.tab";
 import ReviewTabScreen from "../services/tabs/reviews.tab";
 import ProjectTabScreen from "../services/tabs/projects.tab";
@@ -20,6 +26,7 @@ import { RightComponentMenu } from "./components/header.component";
 import { Image } from "expo-image";
 import { useAppSelector } from "src/hooks/useReduxHooks";
 import { CapitalizeFirstLetter } from "src/utils/app.utils";
+import { FlatList, ScrollView } from "react-native-gesture-handler";
 
 const routes = [
   { key: "portfolio", title: "My Portfolio" },
@@ -33,11 +40,30 @@ export default function ProfileTabScreen({
 }: RootStackScreenProps<"ProfileTabNavigator">) {
   const { profile } = useAppSelector((state) => state.auth.user);
   const layout = useWindowDimensions();
-  const [index, setIndex] = useState(0);
+  const [slide, setSlide] = useState(0);
+  const scrollViewRef = useRef<RNScrollView>(null);
+
+  const onScrollTab = (e: NativeSyntheticEvent<NativeScrollEvent>) => {
+    const position = e.nativeEvent.contentOffset.y;
+    // if (position < 300)
+    scrollViewRef.current?.scrollTo({
+      y: position,
+      animated: false,
+    });
+  };
 
   return (
-    <SafeAreaView style={styles.container}>
-      <ScrollView>
+    <SafeAreaView style={styles.container} edges={[]}>
+      <ScrollView
+        //@ts-ignore
+        ref={scrollViewRef}
+        stickyHeaderIndices={[0]}
+        style={
+          {
+            // paddingBottom: 50,
+          }
+        }
+      >
         <ScreenHeader
           title={""}
           titleColor={colorWhite}
@@ -49,37 +75,43 @@ export default function ProfileTabScreen({
           rightComponent={<RightComponentMenu />}
         />
         <View
-          style={[
-            layoutConstants.styles.rowView,
-            layoutConstants.styles.justifyContentBetween,
-            styles.headerViewStyle,
-          ]}
+          style={{
+            zIndex: 10,
+          }}
         >
-          <ViewableAvatar
-            title={
-              profile.avatarurl === ""
-                ? `${profile.firstname.substring(
-                    0,
-                    1,
-                  )}${profile.lastname.substring(0, 1)}`
-                : undefined
-            }
-            rounded
-            source={
-              profile.avatarurl !== ""
-                ? {
-                    uri: profile.avatarurl,
-                  }
-                : undefined
-            }
-            ImageComponent={Image}
-            size={fontUtils.h(45)}
-            containerStyle={styles.avatarContainerStyle}
-          />
-          {/* <View style={styles.priceViewStyle}>
+          <View
+            style={[
+              layoutConstants.styles.rowView,
+              layoutConstants.styles.justifyContentBetween,
+              styles.headerViewStyle,
+            ]}
+          >
+            <ViewableAvatar
+              title={
+                profile.avatarurl === ""
+                  ? `${profile.firstname.substring(
+                      0,
+                      1,
+                    )}${profile.lastname.substring(0, 1)}`
+                  : undefined
+              }
+              rounded
+              source={
+                profile.avatarurl !== ""
+                  ? {
+                      uri: profile.avatarurl,
+                    }
+                  : undefined
+              }
+              ImageComponent={Image}
+              size={fontUtils.h(45)}
+              containerStyle={styles.avatarContainerStyle}
+            />
+            {/* <View style={styles.priceViewStyle}>
             <Text fontFamily={fontUtils.manrope_bold}>N10,000</Text>
             <Text size={fontUtils.h(8)}>Average price</Text>
           </View> */}
+          </View>
         </View>
         <View style={styles.contentStyle}>
           <View style={[layoutConstants.styles.rowView]}>
@@ -152,17 +184,56 @@ export default function ProfileTabScreen({
                   color={colorWhite}
                   fontFamily={fontUtils.manrope_medium}
                   mb={fontUtils.h(10)}
+                  align="center"
                 >
                   {s.value}
                 </Text>
-                <Text size={fontUtils.h(10)} color={colorWhite}>
+                <Text align="center" size={fontUtils.h(10)} color={colorWhite}>
                   {s.label}
                 </Text>
               </View>
             ))}
           </View>
         </View>
-        <TabView
+        <FlatList
+          data={routes}
+          renderItem={({ item, index }) => (
+            <TouchableOpacity
+              onPress={() => setSlide(index)}
+              style={[
+                {
+                  backgroundColor: "transparent",
+                  // height: fontUtils.h(40),
+                  marginTop: fontUtils.h(20),
+                  flex: 1,
+                  width: deivceWidth / 3,
+                  alignItems: "center",
+                  paddingBottom: fontUtils.h(10),
+                  borderBottomWidth: index === slide ? fontUtils.w(2) : 0,
+                  borderColor: colorPrimary,
+                },
+              ]}
+            >
+              <Text size={fontUtils.h(10)}>{item.title}</Text>
+            </TouchableOpacity>
+          )}
+          horizontal
+          showsHorizontalScrollIndicator={false}
+        />
+        {slide === 0 ? (
+          <PortfolioTabScreen
+            onScroll={onScrollTab}
+            profileId={`${profile.id}`}
+          />
+        ) : slide === 1 ? (
+          <ReviewTabScreen profileid={profile.id} onScroll={onScrollTab} />
+        ) : (
+          <ProjectTabScreen
+            profileId={`${profile.id}`}
+            onScroll={onScrollTab}
+          />
+        )}
+        {/* <TabView
           navigationState={{ index, routes }}
           onIndexChange={setIndex}
           initialLayout={{ width: layout.width }}
@@ -185,15 +256,30 @@ export default function ProfileTabScreen({
           renderScene={({ route: tabRoute }) => {
             switch (tabRoute.key) {
               case "portfolio":
-                return <PortfolioTabScreen />;
+                return (
+                  <PortfolioTabScreen
+                    onScroll={onScrollTab}
+                    profileId={`${profile.id}`}
+                  />
+                );
               case "reviews":
-                return <ReviewTabScreen profileid={profile.id} />;
+                return (
+                  <ReviewTabScreen
+                    profileid={profile.id}
+                    onScroll={onScrollTab}
+                  />
+                );
               default:
-                return <ProjectTabScreen />;
+                return (
+                  <ProjectTabScreen
+                    profileId={`${profile.id}`}
+                    onScroll={onScrollTab}
+                  />
+                );
             }
           }}
-          style={{ height: deviceHeight - fontUtils.h(150) }}
-        />
+          style={{ height: deviceHeight }}
+        /> */}
       </ScrollView>
     </SafeAreaView>
   );
@@ -226,6 +312,7 @@ const styles = StyleSheet.create({
   summaryItemStyle: {
     flex: 1,
     alignItems: "center",
+    paddingHorizontal: fontUtils.w(7),
   },
   priceViewStyle: {
     alignItems: "center",

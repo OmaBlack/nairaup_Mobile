@@ -107,6 +107,9 @@ export default function HotelsTabScreen({
   return (
     <ScrollView
       style={styles.container}
+      contentContainerStyle={{
+        paddingBottom: layoutConstants.tabBarHeight,
+      }}
       refreshControl={
         <AppRefreshControl refreshing={isFetching} onRefresh={onRefresh} />
       }

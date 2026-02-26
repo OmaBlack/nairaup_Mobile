@@ -1,6 +1,6 @@
 import React, { useEffect } from "react";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
-import { StyleSheet } from "react-native";
+import { Platform, StyleSheet } from "react-native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { RenderProps, RootTabParamList } from "src/types/navigation.types";
 import colorsConstants, { colorPrimary } from "src/constants/colors.constants";
@@ -29,6 +29,7 @@ import { useAppDispatch, useAppSelector } from "src/hooks/useReduxHooks";
 import { saveAppliedJobs, saveSavedJobs } from "src/services/redux/slices/jobs";
 import useAuth from "src/hooks/apis/useAuth";
 import { logout } from "src/services/redux/slices/auth";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 const BottomTab = createBottomTabNavigator<RootTabParamList>();
 const InTabStack = createNativeStackNavigator();
@@ -93,6 +94,7 @@ function ProfileTabNavigator() {
 export function BottomTabNavigator() {
   const { profile } = useAppSelector((state) => state.auth.user);
   const dispatch = useAppDispatch();
+  const insets = useSafeAreaInsets();
   const tabBarIconSize = fontUtils.h(18);
   const { theme } = useAppTheme();
 
@@ -171,7 +173,10 @@ export function BottomTabNavigator() {
         tabBarActiveBackgroundColor: colorsConstants[theme].screenGb,
         headerShown: false,
         tabBarStyle: {
-          height: layoutConstants.tabBarHeight,
+          height:
+            //@ts-ignore
+            layoutConstants?.tabBarHeight +
+            (Platform.OS === "android" ? insets.bottom : 0),
           backgroundColor: colorsConstants[theme].screenGb,
         },
         tabBarLabelStyle: styles.tabBarLabelStyle,

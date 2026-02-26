@@ -88,7 +88,7 @@ export default function ApartmentRateBuyerScreen({
           ))}
         </View>
         <Text mt={fontUtils.h(60)} fontFamily={fontUtils.manrope_medium}>
-          Kindlt leave a review for this buyer
+          Kindly leave a review for this buyer
         </Text>
         <Input
           value={note}

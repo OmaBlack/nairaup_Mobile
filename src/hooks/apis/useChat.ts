@@ -51,6 +51,7 @@ export const useConnection = () => {
       type: "PUT",
       pathParams,
       data,
+      showToast: false,
     });
     setLoading(false);
     cb();

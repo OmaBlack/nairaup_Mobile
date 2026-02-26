@@ -44,6 +44,10 @@ import HotelReservationViewScreen from "src/screens/hotels/hotel.reservation.vie
 import ReviewsScreen from "src/screens/profiletab/reviews.screen";
 import TransactionsScreen from "src/screens/transactions";
 import HomeTabScreen from "src/screens/hometab";
+import PasswordSecurityScreen from "src/screens/settings/password.security.screen";
+import AccountManagementScreen from "src/screens/settings/account.management.screen";
+import PinEditScreen from "src/screens/settings/pin.edit.screen";
+import HelpCenterScreen from "src/screens/settings/help.screen";
 
 export const CommonRoutes: RenderProps[] = [
   {
@@ -284,6 +288,16 @@ export const UserRoutes: RenderProps[] = [
     },
   },
   {
+    name: "PinEditScreen",
+    component: PinEditScreen,
+    initialParams: {},
+    options: {
+      header: () => (
+        <ScreenHeader title={""} backBtnTitle="Update Security PIN" />
+      ),
+    },
+  },
+  {
     name: "AllPurchasesScreen",
     component: AllPurchasesScreen,
     initialParams: {},
@@ -331,9 +345,9 @@ export const UserRoutes: RenderProps[] = [
             route.params.type === "job"
               ? "Create Job Listing"
               : //@ts-ignore
-              route.params.type === "apartment"
-              ? "Create Apartment Listing"
-              : "Create Hotel Listing"
+                route.params.type === "apartment"
+                ? "Create Apartment Listing"
+                : "Create Hotel Listing"
           }
         />
       ),
@@ -430,12 +444,42 @@ export const UserRoutes: RenderProps[] = [
     },
   },
   {
+    name: "PasswordSecurityScreen",
+    component: PasswordSecurityScreen,
+    initialParams: {},
+    options: {
+      header: ({ route }) => (
+        <ScreenHeader title={""} backBtnTitle={"Security"} />
+      ),
+    },
+  },
+  {
+    name: "AccountManagementScreen",
+    component: AccountManagementScreen,
+    initialParams: {},
+    options: {
+      header: ({ route }) => (
+        <ScreenHeader title={""} backBtnTitle={"Account Management"} />
+      ),
+    },
+  },
+  {
     name: "TransactionsScreen",
     component: TransactionsScreen,
     initialParams: {},
     options: {
       header: ({ route }) => (
         <ScreenHeader title={""} backBtnTitle={"Transactions"} />
+      ),
+    },
+  },
+  {
+    name: "HelpCenterScreen",
+    component: HelpCenterScreen,
+    initialParams: {},
+    options: {
+      header: ({ route }) => (
+        <ScreenHeader title={""} backBtnTitle={"Help Center"} />
       ),
     },
   },

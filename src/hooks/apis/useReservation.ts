@@ -28,6 +28,7 @@ const useReservation = () => {
     id: number,
     data: {
       type: "checkin" | "checkout";
+      pin: string;
     },
     propertyId: number,
     cb = () => {},

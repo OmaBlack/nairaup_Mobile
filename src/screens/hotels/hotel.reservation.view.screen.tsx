@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useRef, useState } from "react";
 import { Alert, StyleSheet, View } from "react-native";
 import { RootStackScreenProps } from "src/types/navigation.types";
 import {
@@ -18,6 +18,8 @@ import { usePaystack } from "react-native-paystack-webview";
 import { useAppSelector } from "src/hooks/useReduxHooks";
 import { Toast } from "toastify-react-native";
 import useTransaction from "src/hooks/apis/useTransactions";
+import { Modalize } from "react-native-modalize";
+import { NetworkResponse } from "src/types/request.types";
 
 export default function HotelReservationViewScreen({
   navigation,
@@ -32,6 +34,11 @@ export default function HotelReservationViewScreen({
   const { popup } = usePaystack();
   const [checkedIn, setCheckedIn] = useState(data?.status === "ongoing");
   const [checkedOut, setCheckedOut] = useState(data?.status === "closed");
+  const [pin, setPIN] = useState("");
+  const modalRef = useRef<Modalize>(null);
+  const [checkType, setCheckType] = useState<"checkin" | "checkout" | null>(
+    null,
+  );
 
   const makePayment = async () => {
     const refRef = await generatePaymentReference({
@@ -53,7 +60,6 @@ export default function HotelReservationViewScreen({
           ],
         },
         onSuccess: (res) => {
-          console.log("Success:", res);
           navigation.navigate("HotelReserveSuccessScreen", {
             note: `Reservation for ${data?.room?.title} at ${data?.room?.property?.title}`,
           });
@@ -67,7 +73,6 @@ export default function HotelReservationViewScreen({
           }),
         onLoad: (res) => console.log("WebView Loaded:", res),
         onError: (err) => {
-          console.log(err);
           Toast.show({
             type: "error",
             text1: "Payment",
@@ -76,6 +81,39 @@ export default function HotelReservationViewScreen({
           });
         },
       });
+  };
+
+  const doAction = () => {
+    if (checkType === "checkin") doCheckIn();
+    else doCheckOut();
+  };
+
+  const checkInOutDone = (req: NetworkResponse) => {
+    if (checkType === "checkin") setCheckedIn(true);
+    else setCheckedOut(true);
+    if (req.code === 200) {
+      modalRef.current?.close();
+      setPIN("");
+      setCheckType(null);
+    }
+    if (req.code === 404) {
+      Alert.alert(
+        "PIN",
+        req.message + "\nWould you like to create a PIN now?",
+        [
+          {
+            text: "Cancel",
+            style: "destructive",
+          },
+          {
+            text: "Yes",
+            isPreferred: true,
+            style: "default",
+            onPress: () => navigation.navigate("PinEditScreen"),
+          },
+        ],
+      );
+    }
   };
 
   const doCheckOut = async () => {
@@ -89,14 +127,15 @@ export default function HotelReservationViewScreen({
         text: "Yes",
         style: "destructive",
         onPress: async () => {
-          await checkInOut(
+          const req = await checkInOut(
             data.id,
             {
               type: "checkout",
+              pin,
             },
             propertyId,
           );
-          setCheckedOut(true);
+          checkInOutDone(req);
         },
       },
     ]);
@@ -113,14 +152,15 @@ export default function HotelReservationViewScreen({
         text: "Yes",
         style: "destructive",
         onPress: async () => {
-          await checkInOut(
+          const req = await checkInOut(
             data.id,
             {
               type: "checkin",
+              pin,
             },
             propertyId,
           );
-          setCheckedIn(true);
+          checkInOutDone(req);
         },
       },
     ]);
@@ -165,8 +205,8 @@ export default function HotelReservationViewScreen({
           />
           <View style={[layoutConstants.styles.rowView]}>
             <DateTimeInput
-              label="Date"
-              date={new Date(data?.reserveddatetime)}
+              label="Checkin Date"
+              date={new Date(data?.checkindatetime)}
               disabled
               wrapperStyle={[
                 styles.dateWrapperStyle,
@@ -174,8 +214,30 @@ export default function HotelReservationViewScreen({
               ]}
             />
             <DateTimeInput
-              label="Time"
-              date={new Date(data?.reserveddatetime)}
+              label="Checkin Time"
+              date={new Date(data?.checkindatetime)}
+              disabled
+              wrapperStyle={[
+                styles.dateWrapperStyle,
+                { marginLeft: fontUtils.w(5) },
+              ]}
+              mode="time"
+              format="hh:mm a"
+            />
+          </View>
+          <View style={[layoutConstants.styles.rowView]}>
+            <DateTimeInput
+              label="Checkout Date"
+              date={new Date(data?.checkoutdatetime)}
+              disabled
+              wrapperStyle={[
+                styles.dateWrapperStyle,
+                { marginRight: fontUtils.w(5) },
+              ]}
+            />
+            <DateTimeInput
+              label="Checkout Time"
+              date={new Date(data?.checkoutdatetime)}
               disabled
               wrapperStyle={[
                 styles.dateWrapperStyle,
@@ -219,8 +281,11 @@ export default function HotelReservationViewScreen({
             >
               <Button
                 title={"Check in"}
-                onPress={doCheckIn}
-                loading={loading}
+                onPress={() => {
+                  setCheckType("checkin");
+                  modalRef.current?.open();
+                }}
+                // loading={loading}
                 disabled={checkedIn}
                 wrapperStyle={{
                   flex: 1,
@@ -229,8 +294,11 @@ export default function HotelReservationViewScreen({
               />
               <Button
                 title={"Check out"}
-                onPress={doCheckOut}
-                loading={loading}
+                onPress={() => {
+                  setCheckType("checkout");
+                  modalRef.current?.open();
+                }}
+                // loading={loading}
                 disabled={checkedOut}
                 backgroundColor={colorSuccess}
                 wrapperStyle={{
@@ -242,6 +310,29 @@ export default function HotelReservationViewScreen({
           )}
         </View>
       </ScrollView>
+      <Modalize adjustToContentHeight handlePosition="inside" ref={modalRef}>
+        <View style={styles.modalContentstyle}>
+          <Text
+            mb={fontUtils.h(15)}
+            fontFamily={fontUtils.manrope_medium}
+          >{`Enter your security pin to ${checkType === "checkin" ? "check in" : "check out"}`}</Text>
+          <Input
+            placeholder="Security PIN"
+            label="Enter security PIN"
+            secureTextEntry
+            value={pin}
+            onChangeText={setPIN}
+            textAlign="center"
+            maxLength={4}
+          />
+          <Button
+            mt={fontUtils.h(20)}
+            children="Continue"
+            onPress={doAction}
+            loading={loading}
+          />
+        </View>
+      </Modalize>
     </SafeAreaView>
   );
 }
@@ -260,5 +351,10 @@ const styles = StyleSheet.create({
   },
   dateWrapperStyle: {
     flex: 1,
+  },
+  modalContentstyle: {
+    paddingHorizontal: layoutConstants.mainViewHorizontalPadding,
+    paddingTop: fontUtils.h(30),
+    paddingBottom: fontUtils.h(30),
   },
 });

@@ -16,6 +16,7 @@ import {
   ColorValue,
   StyleProp,
   ViewStyle,
+  GestureResponderEvent,
 } from "react-native";
 import { Avatar, AvatarProps, IconProps, Icon as RNEIcon } from "@rneui/themed";
 import { Modalize } from "react-native-modalize";
@@ -24,9 +25,13 @@ import { ScrollView as DefaultScrollView } from "react-native-gesture-handler";
 import {
   SafeAreaView as DefaultSafeAreaView,
   SafeAreaViewProps as DefaultSafeAreaViewProps,
+  useSafeAreaInsets,
 } from "react-native-safe-area-context";
 import fontUtils, { deivceWidth } from "src/utils/font.utils";
-import colorsConstants, { colorPrimary } from "src/constants/colors.constants";
+import colorsConstants, {
+  colorDanger,
+  colorPrimary,
+} from "src/constants/colors.constants";
 import layoutConstants from "src/constants/layout.constants";
 import { Image as ExpoImage, ImageProps } from "expo-image";
 import {
@@ -173,6 +178,8 @@ export function ScrollView(
     darkColor,
     children,
     withKeyboard,
+    contentContainerStyle,
+    horizontal,
     ...otherProps
   } = props;
   const backgroundColor = useThemeColor(
@@ -180,13 +187,22 @@ export function ScrollView(
     "screenGb",
   );
 
+  const { bottom } = useSafeAreaInsets();
+
   if (withKeyboard && Platform.OS === "android")
     return (
       <DefaultScrollView
         showsVerticalScrollIndicator={false}
         showsHorizontalScrollIndicator={false}
+        horizontal={horizontal}
         style={[{ backgroundColor }, style]}
         automaticallyAdjustKeyboardInsets
+        contentContainerStyle={[
+          {
+            paddingBottom: !horizontal ? bottom : 0,
+          },
+          contentContainerStyle,
+        ]}
         {...otherProps}
       >
         <KeyboardAvoidingView behavior="padding">
@@ -200,8 +216,15 @@ export function ScrollView(
     <DefaultScrollView
       showsVerticalScrollIndicator={false}
       showsHorizontalScrollIndicator={false}
+      horizontal={horizontal}
       style={[{ backgroundColor }, style]}
       automaticallyAdjustKeyboardInsets
+      contentContainerStyle={[
+        {
+          paddingBottom: !horizontal ? bottom : 0,
+        },
+        contentContainerStyle,
+      ]}
       children={children}
       {...otherProps}
     />
@@ -272,6 +295,9 @@ export function Image(
 export function ViewableImage(
   props: ImageProps & {
     onPress?: Function;
+    withDelete?: boolean;
+    doDelete?: (event: GestureResponderEvent) => void;
+    loading?: boolean;
   },
 ) {
   const {
@@ -280,6 +306,9 @@ export function ViewableImage(
       blurhash: IMAGE_PLACEHOLDER,
     },
     onPress,
+    withDelete,
+    doDelete = () => null,
+    loading,
     ...otherProps
   } = props;
   const modalRef = useRef<Modalize>(null);
@@ -323,13 +352,31 @@ export function ViewableImage(
             },
           ]}
         >
-          <View style={styles.closeBtnContainer}>
-            <Icon
-              name="close"
-              type="ionicon"
-              onPress={() => modalRef?.current?.close()}
-            />
-          </View>
+          <DefaultView
+            style={[
+              layoutConstants.styles.rowView,
+              styles.modalActionBtnContainer,
+            ]}
+          >
+            {withDelete ? (
+              <TouchableText
+                color={colorDanger}
+                onPress={doDelete}
+                disabled={loading}
+              >
+                {loading ? <ActivityIndicator color={colorDanger} /> : "Delete"}
+              </TouchableText>
+            ) : (
+              <View></View>
+            )}
+            <View style={styles.closeBtnContainer}>
+              <Icon
+                name="close"
+                type="ionicon"
+                onPress={() => modalRef?.current?.close()}
+              />
+            </View>
+          </DefaultView>
           <ExpoImage
             transition={IMAGE_TRANSITION}
             source={source}
@@ -448,8 +495,15 @@ const styles = StyleSheet.create({
     height: deivceWidth,
   },
   closeBtnContainer: {
+    // position: "absolute",
+    // top: fontUtils.h(50),
+    // right: fontUtils.w(20),
+  },
+  modalActionBtnContainer: {
     position: "absolute",
     top: fontUtils.h(50),
-    right: fontUtils.w(20),
+    width: deivceWidth,
+    justifyContent: "space-between",
+    paddingHorizontal: layoutConstants.mainViewHorizontalPadding,
   },
 });

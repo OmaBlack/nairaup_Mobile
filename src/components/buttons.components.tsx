@@ -2,6 +2,7 @@ import { Button as RNEButton, ButtonProps } from "@rneui/themed";
 import React from "react";
 import {
   ColorValue,
+  Platform,
   StyleProp,
   TextStyle,
   View,
@@ -68,7 +69,7 @@ export const Button = ({
         ]}
         type={type}
         loading={loading}
-        disabled={disabled || loading}
+        disabled={(disabled || loading) && Platform.OS === "ios"}
         activeOpacity={layoutConstant.activeOpacity}
         buttonStyle={[
           {

@@ -5,6 +5,7 @@ export const GetMediaType = (filePath: string) => {
     case "jpeg":
     case "jpg":
     case "png":
+    case "heic":
       return `image/${extension}`;
     case "pdf":
       return `application/pdf`;

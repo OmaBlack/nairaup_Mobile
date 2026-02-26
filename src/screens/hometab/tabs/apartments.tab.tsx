@@ -55,7 +55,8 @@ export default function ApartmentsTabScreen({
     data: propertiesData,
     refetch,
   } = useGetPropertiesQuery({
-    type: typeFilter,
+    //@ts-ignore
+    type: typeFilter === "apartment" ? "apartment,land" : typeFilter,
     title: searchValue !== "" ? searchValue : undefined,
     status: "listed",
     city: city !== "" ? city : undefined,
@@ -107,6 +108,9 @@ export default function ApartmentsTabScreen({
   return (
     <ScrollView
       style={styles.container}
+      contentContainerStyle={{
+        paddingBottom: layoutConstants.tabBarHeight,
+      }}
       refreshControl={
         <AppRefreshControl refreshing={isFetching} onRefresh={onRefresh} />
       }
@@ -254,7 +258,7 @@ export default function ApartmentsTabScreen({
         fontFamily={fontUtils.manrope_bold}
         mb={fontUtils.h(15)}
       >
-        {`Popular Apartments${city !== "" ? ` in ${city}` : ""}`}
+        {`Popular homes & Lands for sale${city !== "" ? ` in ${city}` : ""}`}
       </Text>
       <FlatList
         data={propertiesData?.data || []}

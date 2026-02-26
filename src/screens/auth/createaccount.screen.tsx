@@ -23,6 +23,7 @@ import SecureStoreManager from "src/utils/securestoremanager.utils";
 import { Toast } from "toastify-react-native";
 import IsEmail from "src/utils/isemail.utils";
 import { OpenPrivacy, OpenTandC } from "src/utils/app.utils";
+import { useGoogle } from "src/hooks/apis/useGoogle";
 
 export default function CreateAccountScreen({
   navigation,
@@ -35,6 +36,7 @@ export default function CreateAccountScreen({
   const [confirmPassword, setConfirmPassword] = useState("");
   const [acceptedTc, setAcceptedTc] = useState(false);
   const { loading, signUp } = useAuth();
+  const { loading: loadingGoogle, signInWithGoogle } = useGoogle();
 
   const disableSignup = useMemo(() => {
     return (
@@ -44,6 +46,10 @@ export default function CreateAccountScreen({
       fullname === ""
     );
   }, [username, password, fullname, confirmPassword]);
+
+  const doGoogleLogin = async () => {
+    await signInWithGoogle();
+  };
 
   const doProceed = async () => {
     let error = "";
@@ -107,7 +113,7 @@ export default function CreateAccountScreen({
         onChangeText={setFullname}
       />
       <Input
-        label="Enter Email/Phone Number"
+        label="Enter Email"
         labelIcon={
           <SimpleLineIcons
             name="envelope"
@@ -115,6 +121,7 @@ export default function CreateAccountScreen({
             color="black"
           />
         }
+        keyboardType="email-address"
         value={username}
         onChangeText={setUsername}
       />
@@ -158,8 +165,9 @@ export default function CreateAccountScreen({
             suppressHighlighting
             onPress={OpenTandC}
           >
-            Terms & Conditions,{" "}
+            Terms & Conditions
           </Text>
+          <Text> and </Text>
           <Text
             color={colorPrimary}
             fontFamily={fontUtils.manrope_medium}
@@ -168,7 +176,7 @@ export default function CreateAccountScreen({
           >
             Privacy Policy,{" "}
           </Text>
-          if application, and confirm that you are at least 18 years old.
+          where applicable, and confirm that you are at least 18 years old.
         </Text>
       </View>
       <Button
@@ -187,6 +195,8 @@ export default function CreateAccountScreen({
       {Platform.OS === "android" ? (
         <Button
           title="Sign Up with Google"
+          onPress={doGoogleLogin}
+          loading={loadingGoogle}
           titleStyle={{
             color: colorsConstants[theme].text,
             fontSize: fontUtils.h(12),

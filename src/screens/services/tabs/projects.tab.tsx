@@ -1,5 +1,10 @@
 import React, { useCallback } from "react";
-import { StyleSheet, View } from "react-native";
+import {
+  NativeScrollEvent,
+  NativeSyntheticEvent,
+  StyleSheet,
+  View,
+} from "react-native";
 import { Text, ViewableImage } from "src/components/themed.components";
 import fontUtils from "src/utils/font.utils";
 import { FlatGrid } from "react-native-super-grid";
@@ -10,13 +15,19 @@ import { PropertyObjectType } from "src/types/properties.types";
 import { AppRefreshControl } from "src/components/refreshcontrol.component";
 import { useGetPropertiesQuery } from "src/services/redux/apis/unauth.api.requests";
 
-export default function ProjectTabScreen({}: {}) {
+export default function ProjectTabScreen({
+  profileId,
+  onScroll,
+}: {
+  profileId: string;
+  onScroll?: (event: NativeSyntheticEvent<NativeScrollEvent>) => void;
+}) {
   const navigation = useNavigation();
   const { profile } = useAppSelector((state) => state.auth.user);
 
   const { isLoading, data, refetch } = useGetPropertiesQuery({
     //@ts-ignore
-    profileid: profile.id,
+    profileid: profileId,
     status: "sold",
   });
 
@@ -62,6 +73,7 @@ export default function ProjectTabScreen({}: {}) {
         ListEmptyComponent={
           <ListEmpty note="You don't have any completed or ongoing project yet. All projects will appear here" />
         }
+        onScroll={onScroll}
       />
     </View>
   );

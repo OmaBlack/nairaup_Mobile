@@ -58,9 +58,15 @@ export const ApartmentFeatures = ({
               size={fontUtils.h(16)}
             />
           )}
-          <Text ml={fontUtils.w(5)} mr={fontUtils.w(10)} size={fontUtils.h(11)}>
-            {detail.feature}
-          </Text>
+          <View style={styles.addressViewStyle}>
+            <Text
+              ml={fontUtils.w(5)}
+              mr={fontUtils.w(10)}
+              size={fontUtils.h(11)}
+            >
+              {detail.feature}
+            </Text>
+          </View>
         </View>
       ))}
     </View>
@@ -82,4 +88,5 @@ const styles = StyleSheet.create({
     marginRight: fontUtils.w(10),
     marginBottom: fontUtils.h(10),
   },
+  addressViewStyle: {},
 });

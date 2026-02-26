@@ -36,7 +36,7 @@ export default {
   isSmallDevice: width < 375,
   tabBarHeight: Platform.select({
     ios: fontUtil.h(65),
-    android: fontUtil.h(70),
+    android: fontUtil.h(60),
   }),
   activeOpacity: 0.6,
   mainViewHorizontalPadding: fontUtil.w(16),

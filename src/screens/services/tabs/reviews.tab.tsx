@@ -1,5 +1,10 @@
 import React, { useCallback } from "react";
-import { StyleSheet, View } from "react-native";
+import {
+  NativeScrollEvent,
+  NativeSyntheticEvent,
+  StyleSheet,
+  View,
+} from "react-native";
 import { Text } from "src/components/themed.components";
 import fontUtils from "src/utils/font.utils";
 import { FlatList } from "react-native-gesture-handler";
@@ -9,7 +14,13 @@ import { useAppSelector } from "src/hooks/useReduxHooks";
 import { useGetReviewsQuery } from "src/services/redux/apis";
 import { AppRefreshControl } from "src/components/refreshcontrol.component";
 
-export default function ReviewTabScreen({ profileid }: { profileid: number }) {
+export default function ReviewTabScreen({
+  profileid,
+  onScroll,
+}: {
+  profileid: number;
+  onScroll?: (event: NativeSyntheticEvent<NativeScrollEvent>) => void;
+}) {
   const renderItem = useCallback(
     ({ item, index }: any) => <ReviewItem {...item} />,
     [],
@@ -38,6 +49,7 @@ export default function ReviewTabScreen({ profileid }: { profileid: number }) {
         ListEmptyComponent={
           <ListEmpty note="You currently do not have any reviews yet. All reviews will appear here." />
         }
+        onScroll={onScroll}
       />
     </View>
   );

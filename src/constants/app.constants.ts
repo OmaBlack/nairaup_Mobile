@@ -3,9 +3,9 @@ import { UserObjectType } from "src/types/app.types";
 
 export const API_BASE_URL = __DEV__ ? `${API_STAGING_URL}` : `${API_DEV_URL}`;
 
-export const GLOBAL_RTK_CACHE_EMPTY_DURATION = 10;
-export const GLOBAL_RTK_REFETCH_DURATION = 10;
-export const RTK_CACHE_EMPTY_DURATION = 10;
+export const GLOBAL_RTK_CACHE_EMPTY_DURATION = 5;
+export const GLOBAL_RTK_REFETCH_DURATION = 5;
+export const RTK_CACHE_EMPTY_DURATION = 5;
 
 export const APP_NAME = `${PRODUCT_NAME}`;
 const _APP_NAME = APP_NAME.toLowerCase().replace(" ", "-");

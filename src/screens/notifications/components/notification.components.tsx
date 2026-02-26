@@ -155,6 +155,7 @@ const styles = StyleSheet.create({
   },
   mainContentStyle: {
     marginLeft: fontUtils.w(10),
+    flex: 1,
   },
   modalContentStyle: {
     borderRadius: fontUtils.w(12),

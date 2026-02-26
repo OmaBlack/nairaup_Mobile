@@ -65,7 +65,7 @@ const HomeTabHeader = () => {
             >
               <Ionicons name="location" color={"#FBBC05"} />
               {` ${CapitalizeFirstLetter(
-                profile.city ?? "",
+                profile.city ?? profile?.state ?? "",
               )}, ${CapitalizeFirstLetter(profile.state ?? "")}`}
             </Text>
           </View>

@@ -5,6 +5,7 @@ import { RootStackScreenProps } from "src/types/navigation.types";
 import {
   Image,
   SafeAreaView,
+  ScrollView,
   Text,
   TouchableText,
 } from "src/components/themed.components";
@@ -30,10 +31,14 @@ export default function LoginScreen({
   const { loading: loadingGoogle, signInWithGoogle } = useGoogle();
 
   const doLogin = async () => {
-    await signIn({
+    const req = await signIn({
       username,
       password,
     });
+    if (req.code === 200)
+      setTimeout(() => {
+        navigation.navigate("App");
+      }, 500);
   };
 
   const doGoogleLogin = async () => {
@@ -41,7 +46,7 @@ export default function LoginScreen({
   };
 
   return (
-    <SafeAreaView style={[styles.container]}>
+    <ScrollView style={[styles.container]}>
       <Image
         source={require("src/assets/images/login-banner.jpg")}
         style={styles.bannerStyle}
@@ -144,13 +149,27 @@ export default function LoginScreen({
           Sign up
         </TouchableText>
       </View>
-    </SafeAreaView>
+      {Platform.OS === "android" ? (
+        <Button
+          title="Continue without account"
+          onPress={() => navigation.navigate("AppBeforeAuth")}
+          titleStyle={{
+            color: colorsConstants[theme].text,
+            fontSize: fontUtils.h(12),
+          }}
+          mt={fontUtils.h(20)}
+          mb={fontUtils.h(40)}
+          type="outline"
+        />
+      ) : null}
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    paddingHorizontal: layoutConstants.mainViewHorizontalPadding,
   },
   bannerStyle: {
     width: "100%",

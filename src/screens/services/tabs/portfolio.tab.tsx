@@ -1,5 +1,10 @@
-import React, { useCallback } from "react";
-import { StyleSheet, View } from "react-native";
+import React, { useCallback, useEffect, useMemo } from "react";
+import {
+  NativeScrollEvent,
+  NativeSyntheticEvent,
+  StyleSheet,
+  View,
+} from "react-native";
 import { Text, ViewableImage } from "src/components/themed.components";
 import fontUtils from "src/utils/font.utils";
 import { FlatGrid } from "react-native-super-grid";
@@ -9,14 +14,22 @@ import { useAppSelector } from "src/hooks/useReduxHooks";
 import { AppRefreshControl } from "src/components/refreshcontrol.component";
 import { useNavigation } from "@react-navigation/native";
 import { PropertyObjectType } from "src/types/properties.types";
+import usePortfolio from "src/hooks/apis/usePortfolio";
 
-export default function PortfolioTabScreen({}: {}) {
+export default function PortfolioTabScreen({
+  profileId,
+  onScroll,
+}: {
+  profileId: string;
+  onScroll?: (event: NativeSyntheticEvent<NativeScrollEvent>) => void;
+}) {
   const navigation = useNavigation();
+  const { deletePortolio, loading } = usePortfolio();
   const { profile } = useAppSelector((state) => state.auth.user);
 
   const { isLoading, data, refetch } = useGetPortfolioQuery({
     //@ts-ignore
-    profileid: profile.id,
+    profileid: profileId,
   });
 
   const onPressItem = (item: PropertyObjectType) => {
@@ -30,6 +43,20 @@ export default function PortfolioTabScreen({}: {}) {
     //   });
   };
 
+  const urls = useMemo(() => {
+    const _data = data?.data || [];
+    return _data?.map((r: any) => {
+      return r?.url;
+    });
+  }, [data]);
+
+  const doDelete = async (ids: number[]) => {
+    await deletePortolio({
+      ids,
+    });
+    refetch();
+  };
+
   const renderItem = useCallback(
     ({ item, index }: any) => (
       <ViewableImage
@@ -37,6 +64,9 @@ export default function PortfolioTabScreen({}: {}) {
           uri: item?.url,
         }}
         style={styles.itemImgStyle}
+        withDelete={profile?.id === Number(profileId)}
+        doDelete={() => doDelete([item?.id])}
+        loading={loading}
         // onPress={() => onPressItem(item)}
       />
     ),
@@ -61,6 +91,7 @@ export default function PortfolioTabScreen({}: {}) {
         ListEmptyComponent={
           <ListEmpty note="You don't have any work sample on display yet" />
         }
+        onScroll={onScroll}
       />
     </View>
   );

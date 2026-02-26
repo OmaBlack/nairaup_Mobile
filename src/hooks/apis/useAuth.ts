@@ -122,9 +122,8 @@ const useAuth = () => {
     setLoading(false);
     cb();
     if (request.code === 200) {
-      axios.defaults.headers.common[
-        "Authorization"
-      ] = `Bearer ${request.data?.token}`;
+      axios.defaults.headers.common["Authorization"] =
+        `Bearer ${request.data?.token}`;
     }
     return request;
   };
@@ -143,9 +142,8 @@ const useAuth = () => {
       data,
     });
     if (request?.code === 202) {
-      axios.defaults.headers.common[
-        "Authorization"
-      ] = `Bearer ${request.data?.token}`;
+      axios.defaults.headers.common["Authorization"] =
+        `Bearer ${request.data?.token}`;
     }
     setLoading(false);
     cb();
@@ -168,6 +166,25 @@ const useAuth = () => {
     return request;
   };
 
+  const updatePIN = async (
+    data: {
+      pin: string;
+      password: string;
+    },
+    cb = () => {},
+  ): Promise<NetworkResponse> => {
+    setLoading(true);
+    const request: NetworkResponse = await requestClan({
+      route: `/auth/change/pin`,
+      type: "POST",
+      data,
+      toastTitle: "Change PIN",
+    });
+    setLoading(false);
+    cb();
+    return request;
+  };
+
   return {
     loading,
     signIn,
@@ -178,6 +195,7 @@ const useAuth = () => {
     changePassword,
     resetPassword,
     checkJWT,
+    updatePIN,
   };
 };
 

@@ -24,8 +24,9 @@ import {
 } from "firebase/firestore";
 import firestoreDb from "src/utils/firebase.utils";
 import { useChat, useConnection } from "src/hooks/apis/useChat";
-import { useAppSelector } from "src/hooks/useReduxHooks";
+import { useAppDispatch, useAppSelector } from "src/hooks/useReduxHooks";
 import layoutConstants from "src/constants/layout.constants";
+import { reduxApiRequests } from "src/services/redux/apis";
 
 export default function MessagingScreen({
   navigation,
@@ -34,6 +35,7 @@ export default function MessagingScreen({
   const { profile } = useAppSelector((state) => state.auth.user);
   const connectionstring = route.params.connectionstring;
   const chatPath = `chats/${connectionstring}/messages`;
+  const dispatch = useAppDispatch();
 
   const { saveChat } = useChat();
   const { updateConnection } = useConnection();
@@ -48,6 +50,18 @@ export default function MessagingScreen({
 
   useFocusEffect(
     useCallback(() => {
+      dispatch(
+        reduxApiRequests.endpoints.getConnectionsSummary.initiate(
+          {
+            //@ts-ignore
+            profileid: profile.id,
+          },
+          {
+            forceRefetch: true,
+            subscribe: true,
+          },
+        ),
+      );
       SecureStoreManager.getItemFromAsyncStorage(`${connectionstring}`).then(
         (json) => {
           const res = JSON.parse(json || "{}");

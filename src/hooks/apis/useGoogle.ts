@@ -31,7 +31,7 @@ export const useGoogle = () => {
         data: {
           firstname: userInfo.data?.user.givenName?.split(" ")[0],
           lastname: userInfo.data?.user.familyName,
-          username: userInfo.data?.user.email,
+          email: userInfo.data?.user.email,
           id: userInfo.data?.user.id,
           avataruri: userInfo?.data?.user?.photo,
           pushnotificationtoken,

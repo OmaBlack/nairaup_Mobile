@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { Platform, StyleSheet, useWindowDimensions, View } from "react-native";
 import { RootStackScreenProps } from "src/types/navigation.types";
 import {
@@ -7,6 +7,7 @@ import {
   ScrollView,
   Text,
   TouchableOpacity,
+  TouchableText,
   ViewableAvatar,
 } from "src/components/themed.components";
 import { useAppTheme } from "src/providers/theme.provider";
@@ -17,7 +18,7 @@ import { Ionicons, Octicons } from "@expo/vector-icons";
 import { Input, SelectInput } from "src/components/inputs.components";
 import { TabBar, TabView } from "react-native-tab-view";
 import useImagePicker from "src/hooks/useImagePicker";
-import { useAppSelector } from "src/hooks/useReduxHooks";
+import { useAppDispatch, useAppSelector } from "src/hooks/useReduxHooks";
 import { Button } from "src/components/buttons.components";
 import useUser from "src/hooks/apis/useUser";
 import { useFileUpload } from "src/hooks/apis/useFIle";
@@ -26,13 +27,16 @@ import { DocumentPickerAsset } from "expo-document-picker";
 import useDocumentPicker from "src/hooks/useDocumentPicker";
 import { ImagePickerAsset } from "expo-image-picker";
 import { useGetProfessionsQuery } from "src/services/redux/apis/unauth.api.requests";
-import { Avatar } from "@rneui/themed";
 import { Image } from "expo-image";
 import useLocation from "src/hooks/useLocation";
 import {
   getPhysicalAddressFromCoordinates,
   removePostalCodes,
 } from "src/utils/location.utils";
+import { reduxApiRequests } from "src/services/redux/apis";
+import { Toast } from "toastify-react-native";
+import PDFPreview from "src/components/pdf.preview";
+import { Modalize } from "react-native-modalize";
 
 const routes = [
   { key: "personal", title: "Personal Details" },
@@ -43,7 +47,12 @@ function PersonalDetails({
   navigation,
   route,
 }: RootStackScreenProps<"ProfileEditScreen">) {
-  const { email, mobile, profile } = useAppSelector((state) => state.auth.user);
+  const {
+    email,
+    mobile: phone,
+    profile,
+  } = useAppSelector((state) => state.auth.user);
+  const pdfModalRef = useRef<Modalize>(null);
   const { loading, updateProfile } = useUser();
   const { loading: uploading, uploadFile } = useFileUpload();
   const { location } = useLocation();
@@ -51,6 +60,9 @@ function PersonalDetails({
     `${profile.firstname} ${profile.lastname}`,
   );
   const [address, setAddress] = useState(`${profile.address || ""}`);
+  const [mobile, setMobile] = useState(`${phone || ""}`);
+  const [city, setCity] = useState("");
+  const [state, setState] = useState("");
   const [locationAddress, setLocationAddress] = useState({
     geolocation: "",
     state: "",
@@ -69,10 +81,15 @@ function PersonalDetails({
           const _address = addr?.formatted_address || "Address not found";
           setAddress(_address);
           const _addressArr = _address?.split(",");
+          const _city = removePostalCodes(
+            _addressArr?.length > 4
+              ? `${_addressArr[_addressArr?.length - 4]?.trim()}`
+              : `${_addressArr[_addressArr?.length - 3]?.trim()}`,
+          );
+          setCity(_city);
+          setState(`${_addressArr[_addressArr?.length - 2]?.trim()}`);
           setLocationAddress({
-            city: removePostalCodes(
-              `${_addressArr[_addressArr?.length - 3]?.trim()}`,
-            ),
+            city: _city,
             state: `${_addressArr[_addressArr?.length - 2]?.trim()}`,
             country: `${_addressArr[_addressArr?.length - 1]?.trim()}`,
             // placeid: `${addr?.place_id}`,
@@ -98,7 +115,9 @@ function PersonalDetails({
   };
 
   const doSelectCv = async () => {
-    const result = await useDocumentPicker();
+    const result = await useDocumentPicker({
+      type: "application/pdf",
+    });
     if (result && result.length > 0) setResume(result[0]);
   };
 
@@ -127,6 +146,12 @@ function PersonalDetails({
   };
 
   const doUpdate = async () => {
+    if (mobile === "")
+      return Toast.show({
+        text1: "Mobile number",
+        text2: "Please enter your mobile number",
+        type: "info",
+      });
     const resumeurl = await processUpload("resume", resume);
     const avatarurl = await processUpload("avatar", avatar);
     const names = fullname.split(" ");
@@ -135,15 +160,17 @@ function PersonalDetails({
       firstname: names.length > 0 ? names[0] : profile.firstname,
       lastname: names.length > 1 ? names[1] : profile.lastname,
       avatarurl: avatarurl !== null ? avatarurl : undefined,
-      state: locationAddress.state,
+      state: state,
       country: locationAddress.country,
       geolocation: locationAddress.geolocation,
-      city: locationAddress.city,
+      city: city,
+      address,
+      mobile,
     });
   };
 
   return (
-    <ScrollView contentContainerStyle={styles.mainContentStyle}>
+    <ScrollView withKeyboard contentContainerStyle={styles.mainContentStyle}>
       <View style={styles.avatarViewStyle}>
         <ViewableAvatar
           rounded
@@ -189,7 +216,8 @@ function PersonalDetails({
         placeholder="Phone number"
         label="Phone number"
         value={mobile}
-        disabled
+        onChangeText={setMobile}
+        keyboardType="phone-pad"
       />
       <Input
         placeholder="Location"
@@ -197,6 +225,8 @@ function PersonalDetails({
         value={address}
         onChangeText={setAddress}
       />
+      <Input label="Enter city" value={city} onChangeText={setCity} />
+      <Input label="Enter state" value={state} onChangeText={setState} />
       <Text mb={fontUtils.h(10)}>Upload Resume</Text>
       <View style={[layoutConstants.styles.rowView]}>
         <TouchableOpacity
@@ -209,9 +239,13 @@ function PersonalDetails({
           </Text>
         </TouchableOpacity>
         {resume && resume.uri ? (
-          <Text ml={fontUtils.w(20)} size={fontUtils.h(10)}>
-            1 file selected
-          </Text>
+          <TouchableText
+            ml={fontUtils.w(20)}
+            size={fontUtils.h(10)}
+            onPress={() => pdfModalRef.current?.open()}
+          >
+            Preview selected resume
+          </TouchableText>
         ) : null}
       </View>
       <Button
@@ -219,6 +253,13 @@ function PersonalDetails({
         onPress={doUpdate}
         loading={loading || uploading}
         mt={fontUtils.h(50)}
+      />
+      <PDFPreview
+        modalRef={pdfModalRef}
+        source={{
+          uri: `${resume?.uri}`,
+        }}
+        onClose={() => pdfModalRef.current?.close()}
       />
     </ScrollView>
   );
@@ -228,6 +269,7 @@ function WorkDetails({
   navigation,
   route,
 }: RootStackScreenProps<"ProfileEditScreen">) {
+  const dispatch = useAppDispatch();
   const { profile } = useAppSelector((state) => state.auth.user);
   const { isFetching, data } = useGetProfessionsQuery({
     order: "profession,asc",
@@ -236,6 +278,7 @@ function WorkDetails({
   const { loading: uploading, uploadFile } = useFileUpload();
   const [images, setImages] = useState<ImagePickerAsset[]>([]);
   const [profession, setProfession] = useState(profile.profession || "");
+  const [professionX, setProfessionX] = useState(profile.profession || "");
   const [years, setYears] = useState(`${profile.yearsofexperience || 0}`);
   const [bio, setBio] = useState(profile.description || "");
   const doSelectFiles = async () => {
@@ -270,14 +313,32 @@ function WorkDetails({
     await updateProfile({
       description: bio.length > 0 ? bio : profile.description,
       yearsofexperience: Number(years) > 0 ? Number(years) : undefined,
-      profession: profession.length > 0 ? profession : undefined,
+      profession:
+        professionX.trim() !== ""
+          ? professionX.trim()
+          : profession.length > 0
+          ? profession
+          : undefined,
       portfoliourls:
         portfoliourls.length > 0 ? portfoliourls.toString() : undefined,
     });
+    if (portfoliourls.length > 0)
+      dispatch(
+        reduxApiRequests.endpoints.getPortfolio.initiate(
+          {
+            //@ts-ignore
+            profileid: profile.id,
+          },
+          {
+            forceRefetch: true,
+            subscribe: true,
+          },
+        ),
+      );
   };
 
   return (
-    <ScrollView contentContainerStyle={styles.mainContentStyle}>
+    <ScrollView withKeyboard contentContainerStyle={styles.mainContentStyle}>
       <Text mb={fontUtils.h(10)}>Profession</Text>
       <SelectInput
         items={
@@ -305,15 +366,14 @@ function WorkDetails({
         listMode={Platform.OS === "android" ? "MODAL" : undefined}
         searchable
         modalContentContainerStyle={{
-          paddingTop: fontUtils.h(60),
+          paddingVertical: fontUtils.h(60),
         }}
       />
       {profession.toLowerCase() === "others" ? (
         <Input
           label="Can't find profession? Add yours"
-          value={profession}
-          onChangeText={setProfession}
-          keyboardType="number-pad"
+          value={professionX}
+          onChangeText={setProfessionX}
         />
       ) : null}
       <Input

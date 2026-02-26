@@ -56,7 +56,7 @@ export const ChatListItem = memo(function ChatListItem({
           <Text ml={fontUtils.w(10)} fontFamily={fontUtils.manrope_medium}>
             {`${data?.connection?.firstname} ${data?.connection?.lastname}`}
           </Text>
-          <Text ml={fontUtils.w(10)} size={fontUtils.h(12)}>
+          <Text ml={fontUtils.w(10)} size={fontUtils.h(12)} numberOfLines={2}>
             {data?.lastmessage || "No message"}
           </Text>
         </View>

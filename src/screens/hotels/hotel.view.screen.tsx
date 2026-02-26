@@ -30,6 +30,7 @@ import {
 import { openGoogleMapsLocation } from "src/utils/location.utils";
 import { SimpleImageSlider } from "@one-am/react-native-simple-image-slider";
 import { useGetPropertyQuery } from "src/services/redux/apis/unauth.api.requests";
+import { CapitalizeFirstLetter } from "src/utils/app.utils";
 
 export default function HotelViewScreen({
   navigation,
@@ -156,7 +157,11 @@ export default function HotelViewScreen({
               features={[
                 {
                   color: colorPrimary,
-                  feature: `${data.address}, ${data.city}`,
+                  feature: `${data.address}\n${CapitalizeFirstLetter(
+                    data.city,
+                  )} ${
+                    data.state ? `, ${CapitalizeFirstLetter(data.state)}` : ``
+                  }`,
                   id: -1,
                   slug: "location",
                 },

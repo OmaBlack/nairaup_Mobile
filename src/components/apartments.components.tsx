@@ -10,6 +10,7 @@ import { useNavigation } from "@react-navigation/native";
 import { PropertyObjectType } from "src/types/properties.types";
 import { convertNumberToWords, shortenNumber } from "src/utils/numbers.utils";
 import { useAppSelector } from "src/hooks/useReduxHooks";
+import { CapitalizeFirstLetter } from "src/utils/app.utils";
 
 export const PurchasedApartmentItem = memo(
   function PurchasedApartmentItem({}: {}) {
@@ -91,7 +92,9 @@ export const ApartmentListingItem = memo(function ApartmentListingItem(
     !token
       ? navigation.navigate("LoginScreen")
       : navigation.navigate(
-          type === "hotel" ? "HotelViewScreen" : "ApartmentViewScreen",
+          type === "hotel" || type === "shortlet"
+            ? "HotelViewScreen"
+            : "ApartmentViewScreen",
           {
             data,
           },
@@ -155,8 +158,8 @@ export const ApartmentListingItem = memo(function ApartmentListingItem(
             ]}
           >
             {!price ? (
-              <Text size={fontUtils.h(10)}>{`${city}${
-                state ? `, ${state}` : ""
+              <Text size={fontUtils.h(10)}>{`${CapitalizeFirstLetter(city)}${
+                state ? `, ${CapitalizeFirstLetter(state)}` : ""
               }`}</Text>
             ) : null}
             <Text size={fontUtils.h(8)}>
@@ -164,7 +167,9 @@ export const ApartmentListingItem = memo(function ApartmentListingItem(
                 name="map-marker-radius-outline"
                 color="black"
               />
-              {` ${city}`}
+              {` ${CapitalizeFirstLetter(city)}${
+                state ? `, ${CapitalizeFirstLetter(state)}` : ""
+              }`}
             </Text>
             {price ? (
               <Text size={fontUtils.h(8)}>

@@ -126,6 +126,10 @@ export type RootStackParamList = AuthScreensParamList &
     };
     ReviewsScreen: undefined;
     TransactionsScreen: undefined;
+    PasswordSecurityScreen: undefined;
+    AccountManagementScreen: undefined;
+    PinEditScreen: undefined;
+    HelpCenterScreen: undefined;
   };
 
 export type RootStackScreenProps<Screen extends keyof RootStackParamList> =

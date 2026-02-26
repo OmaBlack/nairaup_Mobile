@@ -104,7 +104,7 @@ export const RoomItem = memo(function RoomItem(
         </Text>
       </View>
       <Button
-        title={"Make Reervation"}
+        title={"Make Reservation"}
         onPress={() =>
           navigation.navigate("HotelReserveScreen", {
             id: data.id,
