@@ -36,7 +36,7 @@ export const expo = {
   },
   extra: {
     eas: {
-      projectId: "37da923b-0710-4b36-850b-841853c144d4"
+      projectId: "b100f54a-55d8-4c63-b2d4-90f1d7458863"
     },
   },
   plugins: [
