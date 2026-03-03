@@ -24,6 +24,7 @@ import { Toast } from "toastify-react-native";
 import IsEmail from "src/utils/isemail.utils";
 import { OpenPrivacy, OpenTandC } from "src/utils/app.utils";
 import { useGoogle } from "src/hooks/apis/useGoogle";
+import { ActivityIndicator } from "react-native";
 
 export default function CreateAccountScreen({
   navigation,
@@ -35,7 +36,7 @@ export default function CreateAccountScreen({
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [acceptedTc, setAcceptedTc] = useState(false);
-  const { loading, signUp } = useAuth();
+  const { loading, signUp, requestOTP } = useAuth();
   const { loading: loadingGoogle, signInWithGoogle } = useGoogle();
 
   const disableSignup = useMemo(() => {
@@ -68,8 +69,9 @@ export default function CreateAccountScreen({
         text1: "Sign Up",
         text2: error,
       });
+    
     const isEmail = IsEmail(username);
-    const req = await signUp({
+    const signupReq = await signUp({
       firstname: names[0],
       lastname: names[1],
       email: isEmail ? username : undefined,
@@ -77,12 +79,25 @@ export default function CreateAccountScreen({
       pushnotificationtoken,
       password,
     });
-    if (req.code === 201)
-      navigation.navigate("OTPVerificationScreen", {
-        isEmail,
-        mobile: !isEmail ? username : undefined,
+
+    // If signup successful, request OTP
+    if (signupReq.code === 201) {
+      const otpReq = await requestOTP({
         email: isEmail ? username : undefined,
+        mobile: !isEmail ? username : undefined,
+        ispasswordreset: false,
       });
+
+      // Navigate to OTP verification screen
+      if (otpReq.code === 200 || otpReq.code === 201 || signupReq.code === 201) {
+        navigation.navigate("OTPVerificationScreen", {
+          isEmail,
+          mobile: !isEmail ? username : undefined,
+          email: isEmail ? username : undefined,
+          isPasswordReset: false,
+        });
+      }
+    }
   };
 
   return (

@@ -1,4 +1,11 @@
-export const expo = {
+const dotenv = require("dotenv");
+const path = require("path");
+
+// Load .env file
+dotenv.config({ path: path.resolve(__dirname, ".env") });
+
+module.exports = {
+  expo: {
   name: 'NairaUp',
   displayName: "Nairaup",
   slug: "nairaup",
@@ -38,6 +45,44 @@ export const expo = {
     eas: {
       projectId: "b100f54a-55d8-4c63-b2d4-90f1d7458863"
     },
+    // App Configuration
+    PRODUCT_NAME: process.env.PRODUCT_NAME || "NairaUp",
+    API_BEARER_TOKEN: process.env.API_BEARER_TOKEN || "",
+    
+    // API URLs
+    API_DEV_URL: process.env.API_DEV_URL || "http://localhost:3335",
+    API_STAGING_URL: process.env.API_STAGING_URL || "http://localhost:3335",
+    API_PROD_URL: process.env.API_PROD_URL || "https://api.nairaup.com",
+    
+    // Google Configuration
+    ANDROID_GOOGLE_API_KEY: process.env.ANDROID_GOOGLE_API_KEY || "",
+    IOS_GOOGLE_API_KEY: process.env.IOS_GOOGLE_API_KEY || "",
+    ANDROID_MAP_KEY: process.env.ANDROID_MAP_KEY || "",
+    IOS_MAP_KEY: process.env.IOS_MAP_KEY || "",
+    
+    // Firebase Configuration
+    FIREBASE_API_KEY: process.env.FIREBASE_API_KEY || "",
+    FIREBASE_AUTH_DOMAIN: process.env.FIREBASE_AUTH_DOMAIN || "",
+    FIREBASE_DATABASE_URL: process.env.FIREBASE_DATABASE_URL || "",
+    FIREBASE_PROJECT_ID: process.env.FIREBASE_PROJECT_ID || "",
+    FIREBASE_STORAGE_BUCKET: process.env.FIREBASE_STORAGE_BUCKET || "",
+    FIREBASE_MESSAGING_SENDER_ID: process.env.FIREBASE_MESSAGING_SENDER_ID || "",
+    FIREBASE_APP_ID: process.env.FIREBASE_APP_ID || "",
+    FIREBASE_MEASUREMENT_ID: process.env.FIREBASE_MEASUREMENT_ID || "",
+    
+    // Paystack Configuration
+    PAYSTACK_PUBLIC_KEY: process.env.PAYSTACK_PUBLIC_KEY || "",
+    PAYSTACK_PUBLIC_KEY_LIVE: process.env.PAYSTACK_PUBLIC_KEY_LIVE || "",
+    
+    // OneSignal Configuration
+    ONESIGNAL_APP_ID: process.env.ONESIGNAL_APP_ID || "",
+    
+    // Redux Persist Configuration
+    PERSIST_CONFIG_KEY: process.env.PERSIST_CONFIG_KEY || "nairaup-persist",
+    
+    // Countries API Configuration
+    COUNTRIES_API_URL: process.env.COUNTRIES_API_URL || "https://restcountries.com/v3.1",
+    AUTH_TOKEN_COUNTRIES: process.env.AUTH_TOKEN_COUNTRIES || "",
   },
   plugins: [
     "expo-font",
@@ -87,4 +132,5 @@ export const expo = {
   experiments: {
     typedRoutes: true
   }
+  },
 };

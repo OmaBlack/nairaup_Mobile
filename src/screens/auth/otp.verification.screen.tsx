@@ -14,6 +14,7 @@ import { colorPrimary } from "src/constants/colors.constants";
 import { useAppTheme } from "src/providers/theme.provider";
 import OtpInput from "src/components/otpinputs.components";
 import useAuth from "src/hooks/apis/useAuth";
+import { Toast } from "toastify-react-native";
 
 export default function OTPVerificationScreen({
   navigation,
@@ -25,12 +26,10 @@ export default function OTPVerificationScreen({
   const isEmail = route.params.isEmail;
   const [otp, setOtp] = useState("");
   const [counter, setCounter] = useState(0);
+  const [verifyError, setVerifyError] = useState("");
+  const [attemptCount, setAttemptCount] = useState(0);
 
   const { loading, requestOTP, verifyOTP } = useAuth();
-
-  useEffect(() => {
-    startCount(60);
-  }, []);
 
   const startCount = (seconds: number) => {
     let x = setInterval(function () {
@@ -51,23 +50,74 @@ export default function OTPVerificationScreen({
     startCount(60);
   };
 
-  useEffect(() => {
-    if (otp.length === 4) doVerify();
-  }, [otp]);
-
   const doVerify = async () => {
     const req = await verifyOTP({
       otp,
       email: route.params.isEmail ? route.params.email : undefined,
       mobile: !route.params.isEmail ? route.params.mobile : undefined,
     });
-    if (req.code === 200)
+
+    if (req.code === 200) {
+      // OTP verification successful
+      setVerifyError("");
+      setAttemptCount(0);
       navigation.navigate(
         route.params.isPasswordReset
           ? "ResetPasswordScreen"
           : "AccountSuccessScreen",
       );
+    } else {
+      // Handle different error scenarios
+      const newAttemptCount = attemptCount + 1;
+      setAttemptCount(newAttemptCount);
+      
+      let errorMessage = "";
+      
+      switch (req.code) {
+        case 400:
+          errorMessage = "Invalid OTP. Please check and try again.";
+          break;
+        case 401:
+          errorMessage = "Invalid or expired OTP. Please request a new one.";
+          break;
+        case 429:
+          errorMessage = "Too many incorrect attempts. Please try again later.";
+          break;
+        case 410:
+          errorMessage = "OTP has expired. Please request a new one.";
+          break;
+        default:
+          errorMessage = req.message || "OTP verification failed. Please try again.";
+      }
+
+      setVerifyError(errorMessage);
+      setOtp(""); // Reset OTP input on error
+
+      Toast.show({
+        type: "error",
+        text1: "OTP Verification Failed",
+        text2: errorMessage,
+      });
+
+      // Lock input after 3 failed attempts
+      if (newAttemptCount >= 3) {
+        Toast.show({
+          type: "error",
+          text1: "Too Many Attempts",
+          text2: "Please request a new OTP code.",
+        });
+      }
+    }
   };
+
+  useEffect(() => {
+    // Auto-request OTP when screen mounts
+    doRequestNewOTP();
+  }, []);
+
+  useEffect(() => {
+    if (otp.length === 4 && attemptCount < 3) doVerify();
+  }, [otp]);
 
   return (
     <SafeAreaView style={[styles.container]}>
@@ -91,6 +141,17 @@ export default function OTPVerificationScreen({
         in the fields below`}
       </Text>
       <OtpInput value={otp} onChange={setOtp} />
+      {verifyError && (
+        <Text
+          color="red"
+          ml={fontUtils.w(8)}
+          mt={fontUtils.h(12)}
+          mb={fontUtils.h(12)}
+          size={fontUtils.h(12)}
+        >
+          {verifyError} {attemptCount > 0 && `(Attempt ${attemptCount}/3)`}
+        </Text>
+      )}
       <View
         style={[
           layoutConstants.styles.rowView,
@@ -104,9 +165,11 @@ export default function OTPVerificationScreen({
         <Text>
           {counter > 0
             ? `Request new code in ${counter}s`
+            : attemptCount >= 3
+            ? `Too many attempts. Request a new code below.`
             : `Click here if you didn't receive any OTP?`}
         </Text>
-        {counter < 1 ? (
+        {counter < 1 && attemptCount < 3 ? (
           <TouchableText
             color={colorPrimary}
             fontFamily={fontUtils.manrope_semibold}
@@ -114,13 +177,26 @@ export default function OTPVerificationScreen({
           >
             Resend
           </TouchableText>
+        ) : attemptCount >= 3 && counter === 0 ? (
+          <TouchableText
+            color={colorPrimary}
+            fontFamily={fontUtils.manrope_semibold}
+            onPress={() => {
+              setAttemptCount(0);
+              setVerifyError("");
+              setOtp("");
+              doRequestNewOTP();
+            }}
+          >
+            Request New Code
+          </TouchableText>
         ) : null}
       </View>
       <Button
         title="Confirm"
         onPress={doVerify}
         loading={loading}
-        disabled={otp.length < 4}
+        disabled={otp.length < 4 || attemptCount >= 3}
         mb={fontUtils.h(20)}
         mt={fontUtils.h(25)}
       />
