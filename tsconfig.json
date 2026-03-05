@@ -2,7 +2,7 @@
   "compilerOptions": {
     "strict": true,
     "resolveJsonModule": true,
-    "module": "CommonJS",
+    "module": "ESNext",
     "target": "ES2022",
     "jsx": "react",
     "baseUrl": "./",
