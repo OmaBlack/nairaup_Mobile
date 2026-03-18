@@ -1,6 +1,7 @@
 import { createSlice } from "@reduxjs/toolkit";
 import axios from "axios";
 import { produce } from "immer";
+import { REHYDRATE } from "redux-persist";
 import { APP_TOKEN, DEFAULT_USER } from "src/constants/app.constants";
 import { ReduxAuthState } from "src/types/app.types";
 import {
@@ -72,6 +73,14 @@ export const authSlice = createSlice({
       firebaseSignOutWithUserToken();
       return state;
     },
+  },
+  extraReducers: (builder) => {
+    builder.addCase(REHYDRATE, (state, action: any) => {
+      const token = action.payload?.auth?.token;
+      if (token) {
+        axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
+      }
+    });
   },
 });
 
