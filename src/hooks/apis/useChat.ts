@@ -25,7 +25,7 @@ export const useConnection = () => {
   ): Promise<NetworkResponse> => {
     setLoading(true);
     const request = await requestClan({
-      route: `connections`,
+      route: `/connections`,
       type: "POST",
       data,
       showToast: false,
@@ -47,7 +47,7 @@ export const useConnection = () => {
   ): Promise<NetworkResponse> => {
     setLoading(true);
     const request = await requestClan({
-      route: `connections`,
+      route: `/connections`,
       type: "PUT",
       pathParams,
       data,

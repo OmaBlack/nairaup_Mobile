@@ -1,8 +1,5 @@
-import React, { useRef, useState } from "react";
+import React, { useState } from "react";
 import {
-  NativeScrollEvent,
-  ScrollView as RNScrollView,
-  NativeSyntheticEvent,
   StyleSheet,
   useWindowDimensions,
   View,
@@ -26,7 +23,7 @@ import { RightComponentMenu } from "./components/header.component";
 import { Image } from "expo-image";
 import { useAppSelector } from "src/hooks/useReduxHooks";
 import { CapitalizeFirstLetter } from "src/utils/app.utils";
-import { FlatList, ScrollView } from "react-native-gesture-handler";
+import { ScrollView } from "react-native-gesture-handler";
 
 const routes = [
   { key: "portfolio", title: "My Portfolio" },
@@ -41,28 +38,13 @@ export default function ProfileTabScreen({
   const { profile } = useAppSelector((state) => state.auth.user);
   const layout = useWindowDimensions();
   const [slide, setSlide] = useState(0);
-  const scrollViewRef = useRef<RNScrollView>(null);
-
-  const onScrollTab = (e: NativeSyntheticEvent<NativeScrollEvent>) => {
-    const position = e.nativeEvent.contentOffset.y;
-    // if (position < 300)
-    scrollViewRef.current?.scrollTo({
-      y: position,
-      animated: false,
-    });
-  };
 
   return (
     <SafeAreaView style={styles.container} edges={[]}>
       <ScrollView
-        //@ts-ignore
-        ref={scrollViewRef}
-        stickyHeaderIndices={[0]}
-        style={
-          {
-            // paddingBottom: 50,
-          }
-        }
+        style={styles.headerScrollView}
+        scrollEnabled={true}
+        nestedScrollEnabled={false}
       >
         <ScreenHeader
           title={""}
@@ -107,10 +89,6 @@ export default function ProfileTabScreen({
               size={fontUtils.h(45)}
               containerStyle={styles.avatarContainerStyle}
             />
-            {/* <View style={styles.priceViewStyle}>
-            <Text fontFamily={fontUtils.manrope_bold}>N10,000</Text>
-            <Text size={fontUtils.h(8)}>Average price</Text>
-          </View> */}
           </View>
         </View>
         <View style={styles.contentStyle}>
@@ -133,7 +111,6 @@ export default function ProfileTabScreen({
           <View
             style={[
               layoutConstants.styles.rowView,
-              // layoutConstants.styles.justifyContentBetween,
               styles.summaryCardView,
             ]}
           >
@@ -195,15 +172,14 @@ export default function ProfileTabScreen({
             ))}
           </View>
         </View>
-        <FlatList
-          data={routes}
-          renderItem={({ item, index }) => (
+        <View style={styles.tabNavContainer}>
+          {routes.map((item, index) => (
             <TouchableOpacity
+              key={item.key}
               onPress={() => setSlide(index)}
               style={[
                 {
                   backgroundColor: "transparent",
-                  // height: fontUtils.h(40),
                   marginTop: fontUtils.h(20),
                   flex: 1,
                   width: deivceWidth / 3,
@@ -216,71 +192,23 @@ export default function ProfileTabScreen({
             >
               <Text size={fontUtils.h(10)}>{item.title}</Text>
             </TouchableOpacity>
-          )}
-          horizontal
-          showsHorizontalScrollIndicator={false}
-        />
+          ))}
+        </View>
+      </ScrollView>
+      
+      <View style={styles.tabContentContainer}>
         {slide === 0 ? (
           <PortfolioTabScreen
-            onScroll={onScrollTab}
             profileId={`${profile.id}`}
           />
         ) : slide === 1 ? (
-          <ReviewTabScreen profileid={profile.id} onScroll={onScrollTab} />
+          <ReviewTabScreen profileid={profile.id} />
         ) : (
           <ProjectTabScreen
             profileId={`${profile.id}`}
-            onScroll={onScrollTab}
           />
         )}
-        {/* <TabView
-          navigationState={{ index, routes }}
-          onIndexChange={setIndex}
-          initialLayout={{ width: layout.width }}
-          renderTabBar={(props) => (
-            <TabBar
-              indicatorStyle={{
-                backgroundColor: colorPrimary,
-                height: fontUtils.h(2),
-              }}
-              activeColor={colorPrimary}
-              inactiveColor={"rgba(0, 0, 0, 0.5)"}
-              style={{
-                backgroundColor: "transparent",
-                height: fontUtils.h(40),
-                marginTop: fontUtils.h(5),
-              }}
-              {...props}
-            />
-          )}
-          renderScene={({ route: tabRoute }) => {
-            switch (tabRoute.key) {
-              case "portfolio":
-                return (
-                  <PortfolioTabScreen
-                    onScroll={onScrollTab}
-                    profileId={`${profile.id}`}
-                  />
-                );
-              case "reviews":
-                return (
-                  <ReviewTabScreen
-                    profileid={profile.id}
-                    onScroll={onScrollTab}
-                  />
-                );
-              default:
-                return (
-                  <ProjectTabScreen
-                    profileId={`${profile.id}`}
-                    onScroll={onScrollTab}
-                  />
-                );
-            }
-          }}
-          style={{ height: deviceHeight }}
-        /> */}
-      </ScrollView>
+      </View>
     </SafeAreaView>
   );
 }
@@ -290,6 +218,16 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingHorizontal: 0,
     paddingTop: 0,
+  },
+  headerScrollView: {
+    flexGrow: 0,
+  },
+  tabNavContainer: {
+    flexDirection: "row",
+    backgroundColor: "#fff",
+  },
+  tabContentContainer: {
+    flex: 1,
   },
   contentStyle: {
     paddingHorizontal: layoutConstants.mainViewHorizontalPadding,

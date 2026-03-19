@@ -1,7 +1,5 @@
 import React, { useCallback, useEffect, useMemo } from "react";
 import {
-  NativeScrollEvent,
-  NativeSyntheticEvent,
   StyleSheet,
   View,
 } from "react-native";
@@ -18,10 +16,8 @@ import usePortfolio from "src/hooks/apis/usePortfolio";
 
 export default function PortfolioTabScreen({
   profileId,
-  onScroll,
 }: {
   profileId: string;
-  onScroll?: (event: NativeSyntheticEvent<NativeScrollEvent>) => void;
 }) {
   const navigation = useNavigation();
   const { deletePortolio, loading } = usePortfolio();
@@ -91,7 +87,6 @@ export default function PortfolioTabScreen({
         ListEmptyComponent={
           <ListEmpty note="You don't have any work sample on display yet" />
         }
-        onScroll={onScroll}
       />
     </View>
   );

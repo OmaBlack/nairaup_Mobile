@@ -1,7 +1,5 @@
 import React, { useCallback } from "react";
 import {
-  NativeScrollEvent,
-  NativeSyntheticEvent,
   StyleSheet,
   View,
 } from "react-native";
@@ -16,10 +14,8 @@ import { AppRefreshControl } from "src/components/refreshcontrol.component";
 
 export default function ReviewTabScreen({
   profileid,
-  onScroll,
 }: {
   profileid: number;
-  onScroll?: (event: NativeSyntheticEvent<NativeScrollEvent>) => void;
 }) {
   const renderItem = useCallback(
     ({ item, index }: any) => <ReviewItem {...item} />,
@@ -49,7 +45,6 @@ export default function ReviewTabScreen({
         ListEmptyComponent={
           <ListEmpty note="You currently do not have any reviews yet. All reviews will appear here." />
         }
-        onScroll={onScroll}
       />
     </View>
   );

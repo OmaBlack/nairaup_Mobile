@@ -1,5 +1,5 @@
 import React, { useCallback } from "react";
-import { StyleSheet } from "react-native";
+import { StyleSheet, View } from "react-native";
 import { RootStackScreenProps } from "src/types/navigation.types";
 import { ScrollView, Text } from "src/components/themed.components";
 import layoutConstants from "src/constants/layout.constants";
@@ -15,6 +15,8 @@ import {
   useGetPropertiesQuery,
   useGetJobsQuery,
 } from "src/services/redux/apis/unauth.api.requests";
+
+const HORIZONTAL_LIST_HEIGHT = fontUtils.h(200);
 
 export default function AllTabScreen({
   navigation,
@@ -80,6 +82,7 @@ export default function AllTabScreen({
       contentContainerStyle={{
         paddingBottom: layoutConstants.tabBarHeight,
       }}
+      nestedScrollEnabled={false}
     >
       <Text
         size={fontUtils.h(12)}
@@ -88,14 +91,17 @@ export default function AllTabScreen({
       >
         Popular Apartments
       </Text>
-      <FlatList
-        data={propertiesData?.data || []}
-        renderItem={renderApartments}
-        refreshControl={
-          <AppRefreshControl refreshing={isFetching} onRefresh={refetch} />
-        }
-        horizontal
-      />
+      <View style={{ height: HORIZONTAL_LIST_HEIGHT }}>
+        <FlatList
+          data={propertiesData?.data || []}
+          renderItem={renderApartments}
+          refreshControl={
+            <AppRefreshControl refreshing={isFetching} onRefresh={refetch} />
+          }
+          horizontal
+          scrollEnabled={true}
+        />
+      </View>
       {fiveStarHotels?.data?.length > 0 ? (
         <Text
           size={fontUtils.h(12)}
@@ -106,17 +112,20 @@ export default function AllTabScreen({
           5-star Hotels near you
         </Text>
       ) : null}
-      <FlatList
-        data={fiveStarHotels?.data || []}
-        renderItem={renderApartments}
-        refreshControl={
-          <AppRefreshControl
-            refreshing={fetchingFiveStars}
-            onRefresh={refetchFiveStars}
-          />
-        }
-        horizontal
-      />
+      <View style={{ height: HORIZONTAL_LIST_HEIGHT }}>
+        <FlatList
+          data={fiveStarHotels?.data || []}
+          renderItem={renderApartments}
+          refreshControl={
+            <AppRefreshControl
+              refreshing={fetchingFiveStars}
+              onRefresh={refetchFiveStars}
+            />
+          }
+          horizontal
+          scrollEnabled={true}
+        />
+      </View>
       {shortletsData?.data?.length > 0 ? (
         <Text
           size={fontUtils.h(12)}
@@ -127,17 +136,20 @@ export default function AllTabScreen({
           Shortlets around you
         </Text>
       ) : null}
-      <FlatList
-        data={shortletsData?.data || []}
-        renderItem={renderApartments}
-        refreshControl={
-          <AppRefreshControl
-            refreshing={fetchingShortlets}
-            onRefresh={refetchShortlets}
-          />
-        }
-        horizontal
-      />
+      <View style={{ height: HORIZONTAL_LIST_HEIGHT }}>
+        <FlatList
+          data={shortletsData?.data || []}
+          renderItem={renderApartments}
+          refreshControl={
+            <AppRefreshControl
+              refreshing={fetchingShortlets}
+              onRefresh={refetchShortlets}
+            />
+          }
+          horizontal
+          scrollEnabled={true}
+        />
+      </View>
       {/* <Text
         size={fontUtils.h(12)}
         fontFamily={fontUtils.manrope_bold}

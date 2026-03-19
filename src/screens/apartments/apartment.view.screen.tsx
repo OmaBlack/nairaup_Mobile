@@ -97,17 +97,58 @@ export default function ApartmentViewScreen({
   };
 
   const doSendMessage = async (notification: any) => {
-    const connection = await createConnection({
-      connectionid: data?.profileid,
-      waitforresponse: true,
-    });
-    if (connection.code === 201) {
-      const connectionData = connection.data[0];
-      navigation.navigate("MessagingScreen", {
-        connectionstring: connectionData?.connectionstring,
-        profile: {
-          ...connectionData?.connection,
-        },
+    try {
+      if (!data?.profileid) {
+        Toast.show({
+          type: "error",
+          text1: "Error",
+          text2: "Property owner information not available",
+          useModal: true,
+        });
+        return;
+      }
+
+      if (profile?.id === data?.profileid) {
+        Toast.show({
+          type: "warn",
+          text1: "Cannot Message",
+          text2: "You cannot message yourself",
+          useModal: true,
+        });
+        return;
+      }
+
+      console.log("Creating connection with profileid:", data?.profileid);
+      const connection = await createConnection({
+        connectionid: data?.profileid,
+        waitforresponse: true,
+      });
+
+      console.log("Connection response:", connection);
+
+      if (connection?.code === 201 && connection?.data?.length > 0) {
+        const connectionData = connection.data[0];
+        navigation.navigate("MessagingScreen", {
+          connectionstring: connectionData?.connectionstring,
+          profile: {
+            ...connectionData?.connection,
+          },
+        });
+      } else {
+        Toast.show({
+          type: "error",
+          text1: "Connection Failed",
+          text2: connection?.message || "Failed to create connection",
+          useModal: true,
+        });
+      }
+    } catch (error: any) {
+      console.error("Error in doSendMessage:", error);
+      Toast.show({
+        type: "error",
+        text1: "Error",
+        text2: error?.message || "Failed to send message",
+        useModal: true,
       });
     }
   };

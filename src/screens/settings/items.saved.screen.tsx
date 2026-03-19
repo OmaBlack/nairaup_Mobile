@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect } from "react";
-import { StyleSheet } from "react-native";
+import { StyleSheet, View, Dimensions } from "react-native";
 import { RootStackScreenProps } from "src/types/navigation.types";
 import {
   SafeAreaView,
@@ -17,6 +17,9 @@ import {
   useGetSavedPropertiesQuery,
 } from "src/services/redux/apis";
 import { JobObjectType } from "src/types/jobs.types";
+
+const { height: screenHeight } = Dimensions.get("screen");
+const HORIZONTAL_LIST_HEIGHT = fontUtils.h(200);
 
 export default function SavedItemsScreen({
   navigation,
@@ -62,7 +65,7 @@ export default function SavedItemsScreen({
 
   return (
     <SafeAreaView style={[styles.container]}>
-      <ScrollView>
+      <ScrollView nestedScrollEnabled={false}>
         <Text
           mt={fontUtils.h(15)}
           fontFamily={fontUtils.manrope_bold}
@@ -70,13 +73,16 @@ export default function SavedItemsScreen({
         >
           Hotels
         </Text>
-        <FlatList
-          data={hotels?.data || []}
-          renderItem={({ item, index }) => (
-            <ApartmentListingItem {...item?.property} />
-          )}
-          horizontal
-        />
+        <View style={{ height: HORIZONTAL_LIST_HEIGHT }}>
+          <FlatList
+            data={hotels?.data || []}
+            renderItem={({ item, index }) => (
+              <ApartmentListingItem {...item?.property} />
+            )}
+            horizontal
+            scrollEnabled={true}
+          />
+        </View>
         <Text
           fontFamily={fontUtils.manrope_bold}
           mb={fontUtils.h(15)}
@@ -84,13 +90,16 @@ export default function SavedItemsScreen({
         >
           Apartments
         </Text>
-        <FlatList
-          data={apartments?.data || []}
-          renderItem={({ item, index }) => (
-            <ApartmentListingItem {...item?.property} />
-          )}
-          horizontal
-        />
+        <View style={{ height: HORIZONTAL_LIST_HEIGHT }}>
+          <FlatList
+            data={apartments?.data || []}
+            renderItem={({ item, index }) => (
+              <ApartmentListingItem {...item?.property} />
+            )}
+            horizontal
+            scrollEnabled={true}
+          />
+        </View>
         <Text
           fontFamily={fontUtils.manrope_bold}
           mb={fontUtils.h(15)}
@@ -98,11 +107,14 @@ export default function SavedItemsScreen({
         >
           Jobs
         </Text>
-        <FlatList
-          data={jobsData?.data || []}
-          renderItem={renderJob}
-          horizontal
-        />
+        <View style={{ height: HORIZONTAL_LIST_HEIGHT }}>
+          <FlatList
+            data={jobsData?.data || []}
+            renderItem={renderJob}
+            horizontal
+            scrollEnabled={true}
+          />
+        </View>
       </ScrollView>
     </SafeAreaView>
   );

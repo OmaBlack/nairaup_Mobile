@@ -1,7 +1,5 @@
 import React, { useCallback } from "react";
 import {
-  NativeScrollEvent,
-  NativeSyntheticEvent,
   StyleSheet,
   View,
 } from "react-native";
@@ -17,10 +15,8 @@ import { useGetPropertiesQuery } from "src/services/redux/apis/unauth.api.reques
 
 export default function ProjectTabScreen({
   profileId,
-  onScroll,
 }: {
   profileId: string;
-  onScroll?: (event: NativeSyntheticEvent<NativeScrollEvent>) => void;
 }) {
   const navigation = useNavigation();
   const { profile } = useAppSelector((state) => state.auth.user);
@@ -73,7 +69,6 @@ export default function ProjectTabScreen({
         ListEmptyComponent={
           <ListEmpty note="You don't have any completed or ongoing project yet. All projects will appear here" />
         }
-        onScroll={onScroll}
       />
     </View>
   );
