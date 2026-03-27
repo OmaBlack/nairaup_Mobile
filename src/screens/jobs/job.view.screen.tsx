@@ -54,7 +54,7 @@ export default function JobViewScreen({
   }, [applicationData]);
 
   const doSaveJob = async () => {
-    await saveJob(data.id);
+    await saveJob(data.id, data);
   };
 
   const doSendMessage = async (notification: any) => {

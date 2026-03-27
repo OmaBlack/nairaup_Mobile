@@ -6,10 +6,10 @@ import { useAppTheme } from "src/providers/theme.provider";
 import { FlatList } from "react-native-gesture-handler";
 import { JobListingHorizontalItem } from "src/components/jobs.components";
 import fontUtils from "src/utils/font.utils";
-import { useGetSavedJobsQuery } from "src/services/redux/apis";
 import { useAppSelector } from "src/hooks/useReduxHooks";
 import { AppRefreshControl } from "src/components/refreshcontrol.component";
 import { JobObjectType } from "src/types/jobs.types";
+import { useGetSavedJobsHybrid } from "src/hooks/useGetSavedJobsHybrid";
 
 export default function SavedJobsScreen({
   navigation,
@@ -17,9 +17,7 @@ export default function SavedJobsScreen({
 }: RootStackScreenProps<"SavedJobsScreen">) {
   const { theme } = useAppTheme();
   const { id } = useAppSelector((state) => state.auth.user.profile);
-  const { data, isFetching, refetch } = useGetSavedJobsQuery({
-    profileid: `${id}`,
-  });
+  const { data, isFetching, refetch } = useGetSavedJobsHybrid(`${id}`);
 
   const renderItem = useCallback(
     ({

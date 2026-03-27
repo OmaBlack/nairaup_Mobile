@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect } from "react";
 import { StyleSheet, View, Dimensions } from "react-native";
+import { useFocusEffect } from "@react-navigation/native";
 import { RootStackScreenProps } from "src/types/navigation.types";
 import {
   SafeAreaView,
@@ -13,10 +14,10 @@ import { ApartmentListingItem } from "src/components/apartments.components";
 import { JobListingItem } from "src/components/jobs.components";
 import { useAppSelector } from "src/hooks/useReduxHooks";
 import {
-  useGetSavedJobsQuery,
   useGetSavedPropertiesQuery,
 } from "src/services/redux/apis";
 import { JobObjectType } from "src/types/jobs.types";
+import { useGetSavedJobsHybrid } from "src/hooks/useGetSavedJobsHybrid";
 
 const { height: screenHeight } = Dimensions.get("screen");
 const HORIZONTAL_LIST_HEIGHT = fontUtils.h(200);
@@ -29,12 +30,12 @@ export default function SavedItemsScreen({
 
   const { id } = useAppSelector((state) => state.auth.user.profile);
 
-  const { data: apartments } = useGetSavedPropertiesQuery({
+  const { data: apartments, refetch: refetchApartments } = useGetSavedPropertiesQuery({
     "property.type": "apartment",
     profileid: `${id}`,
   });
 
-  const { data: hotels } = useGetSavedPropertiesQuery({
+  const { data: hotels, refetch: refetchHotels } = useGetSavedPropertiesQuery({
     "property.type": "hotel",
     profileid: `${id}`,
   });
@@ -42,10 +43,16 @@ export default function SavedItemsScreen({
   const {
     data: jobsData,
     isFetching,
-    refetch,
-  } = useGetSavedJobsQuery({
-    profileid: `${id}`,
-  });
+    refetch: refetchJobs,
+  } = useGetSavedJobsHybrid(`${id}`);
+
+  useFocusEffect(
+    useCallback(() => {
+      refetchApartments();
+      refetchHotels();
+      refetchJobs();
+    }, [refetchApartments, refetchHotels, refetchJobs]),
+  );
 
   const renderJob = useCallback(
     ({
@@ -76,11 +83,13 @@ export default function SavedItemsScreen({
         <View style={{ height: HORIZONTAL_LIST_HEIGHT }}>
           <FlatList
             data={hotels?.data || []}
+            keyExtractor={(item, index) => `hotel-${item?.property?.id || index}`}
             renderItem={({ item, index }) => (
               <ApartmentListingItem {...item?.property} />
             )}
             horizontal
             scrollEnabled={true}
+            removeClippedSubviews={false}
           />
         </View>
         <Text
@@ -93,11 +102,13 @@ export default function SavedItemsScreen({
         <View style={{ height: HORIZONTAL_LIST_HEIGHT }}>
           <FlatList
             data={apartments?.data || []}
+            keyExtractor={(item, index) => `apartment-${item?.property?.id || index}`}
             renderItem={({ item, index }) => (
               <ApartmentListingItem {...item?.property} />
             )}
             horizontal
             scrollEnabled={true}
+            removeClippedSubviews={false}
           />
         </View>
         <Text
@@ -110,9 +121,11 @@ export default function SavedItemsScreen({
         <View style={{ height: HORIZONTAL_LIST_HEIGHT }}>
           <FlatList
             data={jobsData?.data || []}
+            keyExtractor={(item, index) => `job-${item?.jobpost?.id || index}`}
             renderItem={renderJob}
             horizontal
             scrollEnabled={true}
+            removeClippedSubviews={false}
           />
         </View>
       </ScrollView>

@@ -8,6 +8,7 @@ import {
   updateAppliedJobs,
   updateSavedJobs,
 } from "src/services/redux/slices/jobs";
+import { localStorageUtils } from "src/utils/localstorage.utils";
 
 const useJobs = () => {
   const dispatch = useAppDispatch();
@@ -71,6 +72,7 @@ const useJobs = () => {
 
   const saveJob = async (
     id: number,
+    jobData: any = {},
     cb = () => {},
   ): Promise<NetworkResponse> => {
     setLoading(true);
@@ -85,10 +87,13 @@ const useJobs = () => {
     setLoading(false);
     if (request.code === 201) {
       dispatch(updateSavedJobs([id]));
+      
+      // Also save to localStorage as fallback
+      await localStorageUtils.saveJobLocally(id, jobData, profile.id);
+      
       dispatch(
         reduxApiRequests.endpoints.getSavedJobs.initiate(
           {
-            id: `${id}`,
             profileid: `${profile.id}`,
           },
           {
