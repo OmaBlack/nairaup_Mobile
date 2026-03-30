@@ -11,6 +11,7 @@ const itemWidth = (deivceWidth - fontUtils.w(60)) / 3;
 export default function CreatePostModal({}: {}) {
   const modalRef = useRef<Modalize>(null);
   const navigation = useNavigation();
+  const pendingNav = useRef<(() => void) | null>(null);
 
   const showModal = (e: any) => {
     modalRef.current?.open();
@@ -30,6 +31,12 @@ export default function CreatePostModal({}: {}) {
       adjustToContentHeight
       ref={modalRef}
       modalStyle={styles.modalStyle}
+      onClosed={() => {
+        if (pendingNav.current) {
+          pendingNav.current();
+          pendingNav.current = null;
+        }
+      }}
     >
       <Icon
         name="close-circle"
@@ -77,16 +84,16 @@ export default function CreatePostModal({}: {}) {
             key={m.label}
             style={styles.itemStyle}
             onPress={() => {
+              pendingNav.current = m.onPress;
               modalRef.current?.close();
-              m.onPress();
             }}
           >
             <Image
               source={m.image}
               style={styles.iconStyle}
               onPress={() => {
+                pendingNav.current = m.onPress;
                 modalRef.current?.close();
-                m.onPress();
               }}
             />
             <Text size={fontUtils.h(10)} fontFamily={fontUtils.manrope_medium}>
