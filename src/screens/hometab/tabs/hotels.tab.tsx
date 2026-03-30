@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useState } from "react";
 import { ActivityIndicator, StyleSheet, View } from "react-native";
 import { RootStackScreenProps } from "src/types/navigation.types";
-import { ScrollView, Text } from "src/components/themed.components";
+import { ScrollView, Text, TouchableText } from "src/components/themed.components";
 import layoutConstants from "src/constants/layout.constants";
 import fontUtils from "src/utils/font.utils";
 import { FlatList } from "react-native-gesture-handler";
@@ -17,11 +17,11 @@ import {
 } from "src/services/redux/apis/unauth.api.requests";
 import { usePage } from "src/providers/page.provider";
 import { PAGE_FILTERS, PRICE_RANGES } from "src/constants/app.constants";
-import { CITIES_IN_NIGERIA } from "src/constants/location.constants";
 import {
-  useGetCitiesQuery,
-  useGetStatesQuery,
-} from "src/services/redux/apis/countries.api.requests";
+  useGetNigeriaStates,
+  useGetNigeriaCities,
+  getStateNameById,
+} from "src/hooks/useNigeriaLocations";
 import { colorPrimary } from "src/constants/colors.constants";
 
 const ItemSeparator = () => <View style={{ width: fontUtils.w(16) }} />;
@@ -39,15 +39,24 @@ export default function HotelsTabScreen({
   const [pageFilter, setPageFilter] = useState("hotels");
   const [typeFilter, setTypeFilter] = useState<PropertyType>("hotel");
   const [city, setCity] = useState("");
-  const [state, setState] = useState("2901");
+  const [state, setState] = useState(""); // No default state selection
   const [range, setRange] = useState("");
 
-  const { isLoading: loadingStates, data: statesData } = useGetStatesQuery({
-    countryid: "158",
-  });
-  const { isFetching: fetchingCities, data: citiesData } = useGetCitiesQuery({
-    stateid: state,
-  });
+  // Get states data from local constants
+  const { isLoading: loadingStates, data: statesData } = useGetNigeriaStates();
+  
+  // Get state name for cities query
+  const selectedStateName = getStateNameById(state);
+  
+  // Get cities based on selected state
+  const { isFetching: fetchingCities, data: citiesData } = useGetNigeriaCities(selectedStateName);
+
+  // Clear all filters
+  const clearFilters = () => {
+    setState("");
+    setCity("");
+    setRange("");
+  };
 
   useEffect(() => {
     setPage(pageFilter);
@@ -141,6 +150,7 @@ export default function HotelsTabScreen({
               style={[
                 layoutConstants.styles.rowView,
                 layoutConstants.styles.justifyContentBetween,
+                { alignItems: "center" },
               ]}
             >
               <Text
@@ -149,11 +159,29 @@ export default function HotelsTabScreen({
               >
                 Explore
               </Text>
+              {(state !== "" || city !== "" || range !== "") && (
+                <TouchableText
+                  onPress={clearFilters}
+                  style={{
+                    paddingHorizontal: fontUtils.w(10),
+                    paddingVertical: fontUtils.h(5),
+                  }}
+                >
+                  <Text
+                    fontFamily={fontUtils.manrope_semibold}
+                    size={fontUtils.h(12)}
+                    color={colorPrimary}
+                  >
+                    Clear filters
+                  </Text>
+                </TouchableText>
+              )}
               <SelectInput
                 items={PAGE_FILTERS}
                 value={pageFilter}
                 onSelectItem={(e: any) => setPageFilter(e?.value)}
                 placeholder="Hotels"
+                listMode="MODAL"
                 wrapperStyle={{
                   width: fontUtils.w(160),
                   zIndex: 4,
@@ -225,6 +253,7 @@ export default function HotelsTabScreen({
                 value={range}
                 onSelectItem={(e: any) => setRange(e.value)}
                 placeholder="Price range"
+                listMode="MODAL"
                 wrapperStyle={{
                   zIndex: 2,
                   marginTop: fontUtils.h(10),

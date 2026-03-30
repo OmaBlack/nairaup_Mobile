@@ -386,6 +386,8 @@ export const SelectInput = ({
         modalContentContainerStyle={[
           {
             backgroundColor: "#FAFCFF",
+            paddingTop: fontUtils.h(40),
+            paddingBottom: fontUtils.h(20),
           },
           modalContentContainerStyle,
         ]}

@@ -1,5 +1,5 @@
-import React, { useCallback, useMemo, useState } from "react";
-import { ActivityIndicator, StyleSheet, View } from "react-native";
+import React, { useCallback, useMemo, useState, useEffect } from "react";
+import { ActivityIndicator, StyleSheet, View, FlatList } from "react-native";
 import { RootStackScreenProps } from "src/types/navigation.types";
 import {
   SafeAreaView,
@@ -16,9 +16,10 @@ import { useGetProvidersQuery } from "src/services/redux/apis";
 import { usePage } from "src/providers/page.provider";
 import { useDebounce } from "use-debounce";
 import {
-  useGetCitiesQuery,
-  useGetStatesQuery,
-} from "src/services/redux/apis/countries.api.requests";
+  useGetNigeriaStates,
+  useGetNigeriaCities,
+  getStateNameById,
+} from "src/hooks/useNigeriaLocations";
 import { useGetProfessionsQuery } from "src/services/redux/apis/unauth.api.requests";
 import { colorPrimary } from "src/constants/colors.constants";
 import { useAppSelector } from "src/hooks/useReduxHooks";
@@ -36,16 +37,25 @@ export default function ServicesTabScreen({
   const [searchText, setSearchText] = useState("");
   const [searchValue] = useDebounce(searchText, 1000);
   const [city, setCity] = useState("");
-  const [state, setState] = useState("2901");
+  const [state, setState] = useState(""); // No default state selection
   const [range, setRange] = useState("");
   const [profession, setProfession] = useState("");
 
-  const { isLoading: loadingStates, data: statesData } = useGetStatesQuery({
-    countryid: "158",
-  });
-  const { isFetching: fetchingCities, data: citiesData } = useGetCitiesQuery({
-    stateid: state,
-  });
+  // Get states data from local constants
+  const { isLoading: loadingStates, data: statesData } = useGetNigeriaStates();
+  
+  // Get state name for cities query
+  const selectedStateName = getStateNameById(state);
+  
+  // Get cities based on selected state
+  const { isFetching: fetchingCities, data: citiesData } = useGetNigeriaCities(selectedStateName);
+
+  // Clear all filters
+  const clearFilters = () => {
+    setState("");
+    setCity("");
+    setProfession("");
+  };
 
   const { isFetching, data } = useGetProfessionsQuery({
     order: "profession,asc",
@@ -117,6 +127,7 @@ export default function ServicesTabScreen({
               style={[
                 layoutConstants.styles.rowView,
                 layoutConstants.styles.justifyContentBetween,
+                { alignItems: "center" },
               ]}
             >
               <Text
@@ -125,6 +136,23 @@ export default function ServicesTabScreen({
               >
                 Explore
               </Text>
+              {(state !== "" || city !== "" || profession !== "") && (
+                <TouchableText
+                  onPress={clearFilters}
+                  style={{
+                    paddingHorizontal: fontUtils.w(10),
+                    paddingVertical: fontUtils.h(5),
+                  }}
+                >
+                  <Text
+                    fontFamily={fontUtils.manrope_semibold}
+                    size={fontUtils.h(12)}
+                    color={colorPrimary}
+                  >
+                    Clear filters
+                  </Text>
+                </TouchableText>
+              )}
             </View>
             <View style={styles.filtersViewStyle}>
               <SelectInput

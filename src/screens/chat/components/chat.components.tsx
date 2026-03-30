@@ -2,8 +2,8 @@ import { useNavigation } from "@react-navigation/native";
 import { Avatar } from "@rneui/themed";
 import { Image } from "expo-image";
 import moment from "moment";
-import React, { memo } from "react";
-import { StyleSheet, View } from "react-native";
+import React, { memo, useRef, useState } from "react";
+import { StyleSheet, View, Animated } from "react-native";
 import {
   Bubble,
   BubbleProps,
@@ -20,51 +20,125 @@ import {
   TouchableOpacity,
   ViewableAvatar,
 } from "src/components/themed.components";
-import { colorPrimary } from "src/constants/colors.constants";
+import { colorPrimary, colorDanger } from "src/constants/colors.constants";
 import layoutConstants from "src/constants/layout.constants";
 import fontUtils from "src/utils/font.utils";
+import {
+  PanGestureHandler,
+  State,
+} from "react-native-gesture-handler";
 
 export const ChatListItem = memo(function ChatListItem({
   data,
+  onArchive,
 }: {
   data: any;
+  onArchive?: (connectionId: string) => void;
 }) {
   const navigation = useNavigation();
+  const [isArchived, setIsArchived] = useState(false);
+  const translateX = useRef(new Animated.Value(0)).current;
+  const lastGestureX = useRef(0);
+
+  const onGestureEvent = Animated.event(
+    [
+      {
+        nativeEvent: {
+          translationX: translateX,
+        },
+      },
+    ],
+    { useNativeDriver: false }
+  );
+
+  const onHandlerStateChange = (event: any) => {
+    if (event.nativeEvent.state === State.END) {
+      const { translationX } = event.nativeEvent;
+      lastGestureX.current = translationX;
+
+      console.log(`🎯 Chat swipe detected, translationX: ${translationX}`);
+
+      // If swiped left more than 100 pixels, archive immediately
+      if (translationX < -100) {
+        console.log(`✋ Swipe threshold reached! Archiving...`);
+        Animated.timing(translateX, {
+          toValue: -500,
+          duration: 300,
+          useNativeDriver: false,
+        }).start(() => {
+          console.log(`💾 Setting isArchived to true`);
+          setIsArchived(true);
+          if (onArchive) {
+            console.log(`📤 Calling onArchive callback with: ${data?.connectionstring}`);
+            onArchive(data?.connectionstring);
+          }
+        });
+      } else {
+        // Snap back
+        console.log(`↩️ Not enough swipe, snapping back`);
+        Animated.spring(translateX, {
+          toValue: 0,
+          useNativeDriver: false,
+        }).start();
+      }
+    }
+  };
+
+  if (isArchived) {
+    return null;
+  }
 
   return (
-    <TouchableOpacity
-      style={[styles.chatListItemWrapperStyle]}
-      onPress={() =>
-        navigation.navigate("MessagingScreen", {
-          profile: {
-            ...data?.connection,
-          },
-          connectionstring: data?.connectionstring,
-        })
-      }
-    >
-      <View style={[layoutConstants.styles.rowView]}>
-        <ViewableAvatar
-          size={fontUtils.h(35)}
-          rounded
-          source={{
-            uri: data?.connection?.avatarurl,
-          }}
-          ImageComponent={Image}
-        />
-        <View>
-          <Text ml={fontUtils.w(10)} fontFamily={fontUtils.manrope_medium}>
-            {`${data?.connection?.firstname} ${data?.connection?.lastname}`}
-          </Text>
-          <Text ml={fontUtils.w(10)} size={fontUtils.h(12)} numberOfLines={2}>
-            {data?.lastmessage || "No message"}
-          </Text>
-        </View>
-      </View>
-      <Text size={fontUtils.h(9)} align="right">
-        {moment(data?.lastmessagedatetime).format("MMM DD, YYYY hh:mma")}
-      </Text>
-    </TouchableOpacity>
+    <View style={styles.chatListItemContainer}>
+      <PanGestureHandler
+        onGestureEvent={onGestureEvent}
+        onHandlerStateChange={onHandlerStateChange}
+        activeOffsetX={[-10, 10]}
+      >
+        <Animated.View
+          style={[
+            styles.animatedView,
+            {
+              transform: [{ translateX }],
+            },
+          ]}
+        >
+          <TouchableOpacity
+            style={[styles.chatListItemWrapperStyle]}
+            onPress={() =>
+              navigation.navigate("MessagingScreen", {
+                profile: {
+                  ...data?.connection,
+                },
+                connectionstring: data?.connectionstring,
+              })
+            }
+          >
+            <View style={[layoutConstants.styles.rowView]}>
+              <ViewableAvatar
+                size={fontUtils.h(35)}
+                rounded
+                source={{
+                  uri: data?.connection?.avatarurl,
+                }}
+                ImageComponent={Image}
+              />
+              <View>
+                <Text ml={fontUtils.w(10)} fontFamily={fontUtils.manrope_medium}>
+                  {`${data?.connection?.firstname} ${data?.connection?.lastname}`}
+                </Text>
+                <Text ml={fontUtils.w(10)} size={fontUtils.h(12)} numberOfLines={2}>
+                  {data?.lastmessage || "No message"}
+                </Text>
+              </View>
+            </View>
+            <Text size={fontUtils.h(9)} align="right">
+              {moment(data?.lastmessagedatetime).format("MMM DD, YYYY hh:mma")}
+            </Text>
+          </TouchableOpacity>
+        </Animated.View>
+      </PanGestureHandler>
+    </View>
   );
 });
 
@@ -142,11 +216,18 @@ export const ChatBubble = (props: BubbleProps<any>) => {
 };
 
 const styles = StyleSheet.create({
-  chatListItemWrapperStyle: {
+  chatListItemContainer: {
+    overflow: "hidden",
     marginBottom: fontUtils.h(10),
+  },
+  animatedView: {
+    zIndex: 1,
+  },
+  chatListItemWrapperStyle: {
     borderBottomWidth: 1,
     borderBottomColor: "rgba(0, 0, 0, 0.1)",
     paddingBottom: fontUtils.h(5),
+    backgroundColor: "white",
   },
   dayWrapperStyle: {
     backgroundColor: "transparent",

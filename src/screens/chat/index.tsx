@@ -1,42 +1,159 @@
-import React, { useCallback } from "react";
-import { StyleSheet, View } from "react-native";
+import React, { useCallback, useState } from "react";
+import { StyleSheet, View, Alert } from "react-native";
 import { RootStackScreenProps } from "src/types/navigation.types";
-import { SafeAreaView, Text } from "src/components/themed.components";
+import { SafeAreaView, Text, TouchableOpacity } from "src/components/themed.components";
 import layoutConstants from "src/constants/layout.constants";
 import fontUtils from "src/utils/font.utils";
 import { FlatList } from "react-native-gesture-handler";
 import { ChatListItem } from "./components/chat.components";
-import { useGetConnectionsQuery } from "src/services/redux/apis";
+import { useGetConnectionsQuery, useArchiveConnectionMutation } from "src/services/redux/apis";
 import { AppRefreshControl } from "src/components/refreshcontrol.component";
 import { useAppSelector } from "src/hooks/useReduxHooks";
+import { colorPrimary } from "src/constants/colors.constants";
 
 export default function ChatListScreen({
   navigation,
   route,
 }: RootStackScreenProps<"ChatListScreen">) {
   const { profile } = useAppSelector((state) => state.auth.user);
-  const { data, isLoading, refetch } = useGetConnectionsQuery({
+  const [activeTab, setActiveTab] = useState<"active" | "archived">("active");
+  const [archiveConnection] = useArchiveConnectionMutation();
+
+  const { data: activeData, isLoading: activeLoading, refetch: refetchActive } = useGetConnectionsQuery({
     //@ts-ignore
     profileid: profile.id,
+    deleted: 0,
   });
 
+  const { data: archivedData, isLoading: archivedLoading, refetch: refetchArchived } = useGetConnectionsQuery({
+    //@ts-ignore
+    profileid: profile.id,
+    deleted: 1,
+  });
+
+  const isLoading = activeTab === "active" ? activeLoading : archivedLoading;
+  const currentData = activeTab === "active" ? activeData : archivedData;
+  const currentRefetch = activeTab === "active" ? refetchActive : refetchArchived;
+
+  const handleArchiveChat = useCallback(
+    async (connectionString: string) => {
+      try {
+        console.log(`🔵 Starting archive for connection: ${connectionString}`);
+        
+        const result = await archiveConnection({ connectionstring: connectionString }).unwrap();
+        
+        console.log(`🟢 Archive mutation response:`, result);
+        console.log(`🟢 Response code:`, result?.code);
+        console.log(`🟢 Full response:`, JSON.stringify(result, null, 2));
+        
+        if (result?.code === 200) {
+          console.log(`✅ Archive successful!`);
+          Alert.alert("Success", "Message archived successfully", [
+            { text: "OK" },
+          ]);
+        } else {
+          console.warn(`⚠️ Unexpected response code: ${result?.code}`);
+          Alert.alert("Info", `Archive response code: ${result?.code}`, [
+            { text: "OK" },
+          ]);
+        }
+      } catch (error: any) {
+        console.error(`❌ Archive error:`, error);
+        console.error(`❌ Error message:`, error?.message);
+        console.error(`❌ Error data:`, JSON.stringify(error?.data, null, 2));
+        
+        Alert.alert("Error", "Failed to archive message. Please try again.", [
+          { text: "OK" },
+        ]);
+      } finally {
+        console.log(`🔄 Waiting 2 seconds before refetching...`);
+        // Wait longer for backend to process
+        setTimeout(async () => {
+          try {
+            console.log(`📝 Calling refetchActive with forceRefetch`);
+            const activeRes = await refetchActive();
+            console.log(`📊 refetchActive returned:`, activeRes);
+            if (activeRes?.data?.data) {
+              console.log(`   Active connections count: ${activeRes.data.data.length}`);
+              activeRes.data.data.forEach((conn: any) => {
+                console.log(`   - ${conn.connectionstring} (deleted: ${conn.deleted})`);
+              });
+            }
+          } catch (err) {
+            console.error(`❌ refetchActive error:`, err);
+          }
+
+          try {
+            console.log(`📝 Calling refetchArchived with forceRefetch`);
+            const archivedRes = await refetchArchived();
+            console.log(`📊 refetchArchived returned:`, archivedRes);
+            if (archivedRes?.data?.data) {
+              console.log(`   Archived connections count: ${archivedRes.data.data.length}`);
+              archivedRes.data.data.forEach((conn: any) => {
+                console.log(`   - ${conn.connectionstring} (deleted: ${conn.deleted})`);
+              });
+            }
+          } catch (err) {
+            console.error(`❌ refetchArchived error:`, err);
+          }
+        }, 2000);
+      }
+    },
+    [archiveConnection, refetchActive, refetchArchived],
+  );
+
   const renderItem = useCallback(
-    ({ item, index }: any) => <ChatListItem data={item} />,
-    [],
+    ({ item, index }: any) => (
+      <ChatListItem data={item} onArchive={handleArchiveChat} />
+    ),
+    [handleArchiveChat],
+  );
+
+  const renderEmpty = () => (
+    <View style={styles.emptyContainer}>
+      <Text align="center" size={fontUtils.h(13)}>
+        {activeTab === "active" ? "No active messages" : "No archived messages"}
+      </Text>
+    </View>
   );
 
   return (
     <SafeAreaView style={styles.container}>
-      <View style={[layoutConstants.styles.rowView]}>
-        <Text mt={fontUtils.h(10)} mb={fontUtils.h(20)}>
-          All Messages
-        </Text>
+      {/* Tab Header */}
+      <View style={styles.tabContainer}>
+        <TouchableOpacity
+          style={[styles.tab, activeTab === "active" && styles.activeTab]}
+          onPress={() => setActiveTab("active")}
+        >
+          <Text
+            fontFamily={fontUtils.manrope_semibold}
+            size={fontUtils.h(13)}
+            style={{ color: activeTab === "active" ? colorPrimary : "gray" }}
+          >
+            Active
+          </Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.tab, activeTab === "archived" && styles.activeTab]}
+          onPress={() => setActiveTab("archived")}
+        >
+          <Text
+            fontFamily={fontUtils.manrope_semibold}
+            size={fontUtils.h(13)}
+            style={{ color: activeTab === "archived" ? colorPrimary : "gray" }}
+          >
+            Archived
+          </Text>
+        </TouchableOpacity>
       </View>
+
       <FlatList
-        data={data?.data || []}
+        data={currentData?.data || []}
         renderItem={renderItem}
+        keyExtractor={(item) => item.connectionstring?.toString()}
+        ListEmptyComponent={renderEmpty}
         refreshControl={
-          <AppRefreshControl refreshing={isLoading} onRefresh={refetch} />
+          <AppRefreshControl refreshing={isLoading} onRefresh={currentRefetch} />
         }
       />
     </SafeAreaView>
@@ -46,5 +163,25 @@ export default function ChatListScreen({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+  },
+  tabContainer: {
+    flexDirection: "row",
+    borderBottomWidth: 2,
+    borderBottomColor: "rgba(0, 0, 0, 0.1)",
+    paddingHorizontal: fontUtils.w(16),
+  },
+  tab: {
+    paddingVertical: fontUtils.h(12),
+    paddingHorizontal: fontUtils.w(16),
+    borderBottomWidth: 2,
+    borderBottomColor: "transparent",
+  },
+  activeTab: {
+    borderBottomColor: colorPrimary,
+  },
+  emptyContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
   },
 });

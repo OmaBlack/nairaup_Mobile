@@ -21,7 +21,7 @@ import { NetworkResponse } from "src/types/request.types";
 import SecureStoreManager from "src/utils/securestoremanager.utils";
 
 export const reduxApiRequests = createApi({
-  tagTypes: ["Notifications"],
+  tagTypes: ["Notifications", "Connections"],
   reducerPath: "apiRequests",
   baseQuery: fetchBaseQuery({
     baseUrl: `${API_BASE_URL}`,
@@ -126,6 +126,7 @@ export const reduxApiRequests = createApi({
       query: (queryParams) => ({
         url: `/connections${makeUrlKeyValuePairs(queryParams)}`,
       }),
+      providesTags: ["Connections"],
     }),
 
     getConnectionsCount: builder.query<NetworkResponse, ConnectionsQueryDto>({
@@ -133,6 +134,7 @@ export const reduxApiRequests = createApi({
       query: (queryParams) => ({
         url: `/connections/count${makeUrlKeyValuePairs(queryParams)}`,
       }),
+      providesTags: ["Connections"],
     }),
 
     getConnectionsSummary: builder.query<NetworkResponse, ConnectionsQueryDto>({
@@ -140,6 +142,7 @@ export const reduxApiRequests = createApi({
       query: (queryParams) => ({
         url: `/connections/summary${makeUrlKeyValuePairs(queryParams)}`,
       }),
+      providesTags: ["Connections"],
     }),
 
     getActiveReservation: builder.query<NetworkResponse, number>({
@@ -176,6 +179,28 @@ export const reduxApiRequests = createApi({
         body: data,
       }),
     }),
+    archiveConnection: builder.mutation<NetworkResponse, { connectionstring: string }>({
+      query: (data) => {
+        console.log(`📤 SENDING archiveConnection request`);
+        console.log(`   URL: /connections/${data.connectionstring}`);
+        console.log(`   Method: PUT`);
+        console.log(`   Body: {"deleted": true}`);
+        return {
+          url: `/connections/${data.connectionstring}`,
+          method: "PUT",
+          body: { deleted: true },
+        };
+      },
+      invalidatesTags: ["Connections"],
+    }),
+    archiveNotification: builder.mutation<NetworkResponse, { id: string }>({
+      query: (data) => ({
+        url: `/notifications`,
+        method: "PATCH",
+        body: { ids: [data.id], deleted: true },
+      }),
+      invalidatesTags: ["Notifications"],
+    }),
   }),
 });
 
@@ -198,5 +223,7 @@ export const {
   useSaveJobMutation,
   useSavePropertyMutation,
   useMarkNotificationsReadMutation,
+  useArchiveConnectionMutation,
+  useArchiveNotificationMutation,
 } = reduxApiRequests;
 

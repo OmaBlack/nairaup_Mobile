@@ -1,7 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import React, { useRef, useState } from "react";
 import { memo } from "react";
-import { StyleSheet, View } from "react-native";
+import { StyleSheet, View, Animated } from "react-native";
 import { Modalize } from "react-native-modalize";
 import { Button } from "src/components/buttons.components";
 import { Icon, Text, TouchableOpacity } from "src/components/themed.components";
@@ -10,14 +10,23 @@ import layoutConstants from "src/constants/layout.constants";
 import { useMarkNotificationsReadMutation } from "src/services/redux/apis";
 import { NotificationObjectType } from "src/types/notifications.types";
 import fontUtils from "src/utils/font.utils";
+import { PanGestureHandler, State } from "react-native-gesture-handler";
 
-export const NotificationItem = memo(function NotificationItem(
-  data: NotificationObjectType,
-) {
+export const NotificationItem = memo(function NotificationItem({
+  data,
+  onArchive,
+}: {
+  data: NotificationObjectType;
+  onArchive?: (id: string) => void;
+}) {
   const [markRead] = useMarkNotificationsReadMutation();
   const [status, setStatus] = useState(data.status);
+  const [isArchived, setIsArchived] = useState(false);
+  
+  const translateX = useRef(new Animated.Value(0)).current;
 
   const modalRef = useRef<Modalize>(null);
+  
   const viewNotification = () => {
     modalRef.current?.open();
     if (status === "pending")
@@ -28,27 +37,74 @@ export const NotificationItem = memo(function NotificationItem(
       });
   };
 
+  const onGestureEvent = Animated.event(
+    [{ nativeEvent: { translationX: translateX } }],
+    { useNativeDriver: true },
+  );
+
+  const onHandlerStateChange = (event: any) => {
+    if (event.nativeEvent.state === State.END) {
+      const shouldArchive = event.nativeEvent.translationX < -100;
+      
+      console.log(`🎯 Notification swipe detected, translationX: ${event.nativeEvent.translationX}`);
+
+      if (shouldArchive) {
+        console.log(`✋ Swipe threshold reached! Archiving notification ${data.id}...`);
+        Animated.timing(translateX, {
+          toValue: -500,
+          duration: 300,
+          useNativeDriver: true,
+        }).start(() => {
+          console.log(`💾 Setting isArchived to true for notification ${data.id}`);
+          setIsArchived(true);
+          if (onArchive) {
+            console.log(`📤 Calling onArchive callback with: ${data.id.toString()}`);
+            onArchive(data.id.toString());
+          }
+        });
+      } else {
+        console.log(`↩️ Not enough swipe, snapping back`);
+        Animated.spring(translateX, {
+          toValue: 0,
+          useNativeDriver: true,
+        }).start();
+      }
+    }
+  };
+
+  if (isArchived) {
+    return null;
+  }
 
   return (
-    <View>
-      <TouchableOpacity
-        style={[styles.wrapperStyle]}
-        onPress={viewNotification}
+    <View style={styles.containerWrapper}>
+      <PanGestureHandler
+        onGestureEvent={onGestureEvent}
+        onHandlerStateChange={onHandlerStateChange}
+        activeOffsetX={-10}
       >
-        <Ionicons
-          name={status === "read" ? "checkmark-circle-outline" : "ellipse"}
-          size={fontUtils.h(20)}
-          color={colorSuccess}
-        />
-        <View style={[styles.mainContentStyle]}>
-          <Text size={fontUtils.h(12)} fontFamily={fontUtils.manrope_semibold}>
-            {data.title}
-          </Text>
-          <Text size={fontUtils.h(10)} mt={fontUtils.h(3)}>
-            {data.notification}
-          </Text>
-        </View>
-      </TouchableOpacity>
+        <Animated.View style={{ transform: [{ translateX }] }}>
+          <TouchableOpacity
+            style={[styles.wrapperStyle]}
+            onPress={viewNotification}
+            activeOpacity={0.7}
+          >
+            <Ionicons
+              name={status === "read" ? "checkmark-circle-outline" : "ellipse"}
+              size={fontUtils.h(20)}
+              color={colorSuccess}
+            />
+            <View style={[styles.mainContentStyle]}>
+              <Text size={fontUtils.h(12)} fontFamily={fontUtils.manrope_semibold}>
+                {data.title}
+              </Text>
+              <Text size={fontUtils.h(10)} mt={fontUtils.h(3)}>
+                {data.notification}
+              </Text>
+            </View>
+          </TouchableOpacity>
+        </Animated.View>
+      </PanGestureHandler>
       <ViewNotificationModal data={data} modalRef={modalRef} />
     </View>
   );
@@ -129,6 +185,9 @@ export const ViewNotificationModal = ({
 };
 
 const styles = StyleSheet.create({
+  containerWrapper: {
+    marginBottom: fontUtils.h(15),
+  },
   wrapperStyle: {
     flexDirection: "row",
     borderWidth: 1,
@@ -136,7 +195,7 @@ const styles = StyleSheet.create({
     borderRadius: fontUtils.r(10),
     paddingHorizontal: fontUtils.w(10),
     paddingVertical: fontUtils.h(10),
-    marginBottom: fontUtils.h(15),
+    backgroundColor: colorWhite,
   },
   mainContentStyle: {
     marginLeft: fontUtils.w(10),

@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useState } from "react";
 import { FlatList, ActivityIndicator, StyleSheet, View } from "react-native";
 import { RootStackScreenProps } from "src/types/navigation.types";
-import { ScrollView, Text } from "src/components/themed.components";
+import { ScrollView, Text, TouchableText } from "src/components/themed.components";
 import layoutConstants from "src/constants/layout.constants";
 import fontUtils from "src/utils/font.utils";
 import { ApartmentListingItem } from "src/components/apartments.components";
@@ -17,9 +17,10 @@ import {
 import { usePage } from "src/providers/page.provider";
 import { PAGE_FILTERS, PRICE_RANGES } from "src/constants/app.constants";
 import {
-  useGetCitiesQuery,
-  useGetStatesQuery,
-} from "src/services/redux/apis/countries.api.requests";
+  useGetNigeriaStates,
+  useGetNigeriaCities,
+  getStateNameById,
+} from "src/hooks/useNigeriaLocations";
 import { colorPrimary } from "src/constants/colors.constants";
 
 export default function ApartmentsTabScreen({
@@ -35,15 +36,25 @@ export default function ApartmentsTabScreen({
   const [pageFilter, setPageFilter] = useState("apartments");
   const [typeFilter, setTypeFilter] = useState<PropertyType>("apartment");
   const [city, setCity] = useState("");
-  const [state, setState] = useState("2901");
+  const [state, setState] = useState(""); // No default state selection
   const [range, setRange] = useState("");
 
-  const { isLoading: loadingStates, data: statesData } = useGetStatesQuery({
-    countryid: "158",
-  });
-  const { isFetching: fetchingCities, data: citiesData } = useGetCitiesQuery({
-    stateid: state,
-  });
+  // Get states data from local constants
+  const { isLoading: loadingStates, data: statesData } = useGetNigeriaStates();
+  
+  // Get state name for cities query
+  const selectedStateName = getStateNameById(state);
+  
+  // Get cities based on selected state
+  const { isFetching: fetchingCities, data: citiesData } = useGetNigeriaCities(selectedStateName);
+
+  // Clear all filters
+  const clearFilters = () => {
+    setState("");
+    setCity("");
+    setTypeFilter("apartment");
+    setRange("");
+  };
 
   useEffect(() => {
     setPage(pageFilter);
@@ -139,6 +150,7 @@ export default function ApartmentsTabScreen({
               style={[
                 layoutConstants.styles.rowView,
                 layoutConstants.styles.justifyContentBetween,
+                { alignItems: "center" },
               ]}
             >
               <Text
@@ -147,11 +159,29 @@ export default function ApartmentsTabScreen({
               >
                 Explore
               </Text>
+              {(state !== "" || city !== "" || typeFilter !== "apartment" || range !== "") && (
+                <TouchableText
+                  onPress={clearFilters}
+                  style={{
+                    paddingHorizontal: fontUtils.w(10),
+                    paddingVertical: fontUtils.h(5),
+                  }}
+                >
+                  <Text
+                    fontFamily={fontUtils.manrope_semibold}
+                    size={fontUtils.h(12)}
+                    color={colorPrimary}
+                  >
+                    Clear filters
+                  </Text>
+                </TouchableText>
+              )}
               <SelectInput
                 items={PAGE_FILTERS}
                 value={pageFilter}
                 onSelectItem={(e: any) => setPageFilter(e?.value)}
                 placeholder="Apartments"
+                listMode="MODAL"
                 wrapperStyle={{
                   width: fontUtils.w(160),
                   zIndex: 4,
@@ -165,6 +195,7 @@ export default function ApartmentsTabScreen({
                 onSelectItem={(e: any) => setTypeFilter(e?.value)}
                 loading={fetchingTypes}
                 placeholder="Apartment type"
+                listMode="MODAL"
                 wrapperStyle={{
                   marginBottom: fontUtils.h(10),
                   zIndex: 3,
@@ -220,6 +251,7 @@ export default function ApartmentsTabScreen({
                 value={range}
                 onSelectItem={(e: any) => setRange(e.value)}
                 placeholder="Price range"
+                listMode="MODAL"
                 wrapperStyle={{
                   zIndex: 2,
                   marginTop: fontUtils.h(10),

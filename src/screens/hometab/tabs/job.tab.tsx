@@ -1,7 +1,7 @@
-import React, { useCallback, useMemo, useState } from "react";
-import { ActivityIndicator, StyleSheet, View } from "react-native";
+import React, { useCallback, useMemo, useState, useEffect } from "react";
+import { ActivityIndicator, StyleSheet, View, FlatList } from "react-native";
 import { RootStackScreenProps } from "src/types/navigation.types";
-import { ScrollView, Text } from "src/components/themed.components";
+import { ScrollView, Text, TouchableText } from "src/components/themed.components";
 import layoutConstants from "src/constants/layout.constants";
 import fontUtils from "src/utils/font.utils";
 import { Input, SelectInput } from "src/components/inputs.components";
@@ -17,11 +17,12 @@ import {
   useGetJobsQuery,
   useGetJobTypesAndModesQuery,
 } from "src/services/redux/apis/unauth.api.requests";
-import { CITIES_IN_NIGERIA } from "src/constants/location.constants";
 import {
-  useGetCitiesQuery,
-  useGetStatesQuery,
-} from "src/services/redux/apis/countries.api.requests";
+  useGetNigeriaStates,
+  useGetNigeriaCities,
+  getStateNameById,
+} from "src/hooks/useNigeriaLocations";
+import { usePage } from "src/providers/page.provider";
 
 export default function JobsTabScreen({
   navigation,
@@ -35,15 +36,25 @@ export default function JobsTabScreen({
   const [searchValue] = useDebounce(searchText, 1000);
   const [worktype, setWorkType] = useState("");
   const [city, setCity] = useState("");
-  const [state, setState] = useState("2901");
+  const [state, setState] = useState(""); // No default state selection
   const [range, setRange] = useState("");
 
-  const { isLoading: loadingStates, data: statesData } = useGetStatesQuery({
-    countryid: "158",
-  });
-  const { isFetching: fetchingCities, data: citiesData } = useGetCitiesQuery({
-    stateid: state,
-  });
+  // Get states data from local constants
+  const { isLoading: loadingStates, data: statesData } = useGetNigeriaStates();
+  
+  // Get state name for cities query
+  const selectedStateName = getStateNameById(state);
+  
+  // Get cities based on selected state
+  const { isFetching: fetchingCities, data: citiesData } = useGetNigeriaCities(selectedStateName);
+
+  // Clear all filters
+  const clearFilters = () => {
+    setState("");
+    setCity("");
+    setWorkType("");
+    setRange("");
+  };
 
   const { data: jobTypesAndModesData, isLoading: loadingTypes } =
     useGetJobTypesAndModesQuery(null);
@@ -116,6 +127,7 @@ export default function JobsTabScreen({
               style={[
                 layoutConstants.styles.rowView,
                 layoutConstants.styles.justifyContentBetween,
+                { alignItems: "center" },
               ]}
             >
               <Text
@@ -124,12 +136,30 @@ export default function JobsTabScreen({
               >
                 Explore
               </Text>
+              {(state !== "" || city !== "" || worktype !== "" || range !== "") && (
+                <TouchableText
+                  onPress={clearFilters}
+                  style={{
+                    paddingHorizontal: fontUtils.w(10),
+                    paddingVertical: fontUtils.h(5),
+                  }}
+                >
+                  <Text
+                    fontFamily={fontUtils.manrope_semibold}
+                    size={fontUtils.h(12)}
+                    color={colorPrimary}
+                  >
+                    Clear filters
+                  </Text>
+                </TouchableText>
+              )}
 
               <SelectInput
                 items={PAGE_FILTERS}
                 value={pageFilter}
                 onSelectItem={(e: any) => setPageFilter(e?.value)}
                 placeholder="Jobs"
+                listMode="MODAL"
                 wrapperStyle={{
                   width: fontUtils.w(160),
                   zIndex: 4,
@@ -142,6 +172,7 @@ export default function JobsTabScreen({
                 value={worktype}
                 onSelectItem={(e: any) => setWorkType(e?.value)}
                 placeholder="Job type"
+                listMode="MODAL"
                 wrapperStyle={{
                   marginBottom: fontUtils.h(10),
                   zIndex: 3,
@@ -200,6 +231,7 @@ export default function JobsTabScreen({
                 value={range}
                 onSelectItem={(e: any) => setRange(e.value)}
                 placeholder="Salary range"
+                listMode="MODAL"
                 wrapperStyle={{
                   zIndex: 2,
                   marginTop: fontUtils.h(10),
