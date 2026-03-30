@@ -38,63 +38,33 @@ export default function ChatListScreen({
   const handleArchiveChat = useCallback(
     async (connectionString: string) => {
       try {
-        console.log(`🔵 Starting archive for connection: ${connectionString}`);
-        
         const result = await archiveConnection({ connectionstring: connectionString }).unwrap();
         
-        console.log(`🟢 Archive mutation response:`, result);
-        console.log(`🟢 Response code:`, result?.code);
-        console.log(`🟢 Full response:`, JSON.stringify(result, null, 2));
-        
         if (result?.code === 200) {
-          console.log(`✅ Archive successful!`);
           Alert.alert("Success", "Message archived successfully", [
             { text: "OK" },
           ]);
         } else {
-          console.warn(`⚠️ Unexpected response code: ${result?.code}`);
           Alert.alert("Info", `Archive response code: ${result?.code}`, [
             { text: "OK" },
           ]);
         }
       } catch (error: any) {
-        console.error(`❌ Archive error:`, error);
-        console.error(`❌ Error message:`, error?.message);
-        console.error(`❌ Error data:`, JSON.stringify(error?.data, null, 2));
-        
         Alert.alert("Error", "Failed to archive message. Please try again.", [
           { text: "OK" },
         ]);
       } finally {
-        console.log(`🔄 Waiting 2 seconds before refetching...`);
-        // Wait longer for backend to process
         setTimeout(async () => {
           try {
-            console.log(`📝 Calling refetchActive with forceRefetch`);
-            const activeRes = await refetchActive();
-            console.log(`📊 refetchActive returned:`, activeRes);
-            if (activeRes?.data?.data) {
-              console.log(`   Active connections count: ${activeRes.data.data.length}`);
-              activeRes.data.data.forEach((conn: any) => {
-                console.log(`   - ${conn.connectionstring} (deleted: ${conn.deleted})`);
-              });
-            }
+            await refetchActive();
           } catch (err) {
-            console.error(`❌ refetchActive error:`, err);
+            // handle error silently
           }
 
           try {
-            console.log(`📝 Calling refetchArchived with forceRefetch`);
-            const archivedRes = await refetchArchived();
-            console.log(`📊 refetchArchived returned:`, archivedRes);
-            if (archivedRes?.data?.data) {
-              console.log(`   Archived connections count: ${archivedRes.data.data.length}`);
-              archivedRes.data.data.forEach((conn: any) => {
-                console.log(`   - ${conn.connectionstring} (deleted: ${conn.deleted})`);
-              });
-            }
+            await refetchArchived();
           } catch (err) {
-            console.error(`❌ refetchArchived error:`, err);
+            // handle error silently
           }
         }, 2000);
       }

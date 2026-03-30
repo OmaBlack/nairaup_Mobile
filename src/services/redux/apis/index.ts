@@ -180,17 +180,11 @@ export const reduxApiRequests = createApi({
       }),
     }),
     archiveConnection: builder.mutation<NetworkResponse, { connectionstring: string }>({
-      query: (data) => {
-        console.log(`📤 SENDING archiveConnection request`);
-        console.log(`   URL: /connections/${data.connectionstring}`);
-        console.log(`   Method: PUT`);
-        console.log(`   Body: {"deleted": true}`);
-        return {
-          url: `/connections/${data.connectionstring}`,
-          method: "PUT",
-          body: { deleted: true },
-        };
-      },
+      query: (data) => ({
+        url: `/connections/${data.connectionstring}`,
+        method: "PUT",
+        body: { deleted: true },
+      }),
       invalidatesTags: ["Connections"],
     }),
     archiveNotification: builder.mutation<NetworkResponse, { id: string }>({

@@ -56,26 +56,20 @@ export const ChatListItem = memo(function ChatListItem({
       const { translationX } = event.nativeEvent;
       lastGestureX.current = translationX;
 
-      console.log(`🎯 Chat swipe detected, translationX: ${translationX}`);
-
       // If swiped left more than 100 pixels, archive immediately
       if (translationX < -100) {
-        console.log(`✋ Swipe threshold reached! Archiving...`);
         Animated.timing(translateX, {
           toValue: -500,
           duration: 300,
           useNativeDriver: false,
         }).start(() => {
-          console.log(`💾 Setting isArchived to true`);
           setIsArchived(true);
           if (onArchive) {
-            console.log(`📤 Calling onArchive callback with: ${data?.connectionstring}`);
             onArchive(data?.connectionstring);
           }
         });
       } else {
         // Snap back
-        console.log(`↩️ Not enough swipe, snapping back`);
         Animated.spring(translateX, {
           toValue: 0,
           useNativeDriver: false,

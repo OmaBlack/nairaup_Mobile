@@ -28,49 +28,29 @@ export default function NotificationsScreen() {
     profileid: `${profile.id}`,
   });
 
-  if (__DEV__) {
-    console.log("📬 Notifications data:", JSON.stringify(data));
-    console.log("📊 Notifications count:", JSON.stringify(countData));
-    if (isError) console.log("❌ Notifications error:", JSON.stringify(error));
-  }
-
   const notifications: NotificationObjectType[] = data?.data || [];
 
   const handleArchiveNotification = useCallback(
     async (notificationId: string) => {
       try {
-        console.log(`🔵 Starting archive for notification: ${notificationId}`);
-        
         const result = await archiveNotification({ id: notificationId }).unwrap();
         
-        console.log(`🟢 Archive mutation response:`, result);
-        console.log(`🟢 Response code:`, result?.code);
-        console.log(`🟢 Full response:`, JSON.stringify(result, null, 2));
-        
         if (result?.code === 200) {
-          console.log(`✅ Archive successful!`);
           Alert.alert("Success", "Notification archived successfully", [
             { text: "OK" },
           ]);
         } else {
-          console.warn(`⚠️ Unexpected response code: ${result?.code}`);
           Alert.alert("Info", `Archive response code: ${result?.code}`, [
             { text: "OK" },
           ]);
         }
       } catch (error: any) {
-        console.error(`❌ Archive error:`, error);
-        console.error(`❌ Error message:`, error?.message);
-        console.error(`❌ Error data:`, JSON.stringify(error?.data, null, 2));
-        
         Alert.alert("Error", "Failed to archive notification. Please try again.", [
           { text: "OK" },
         ]);
       } finally {
-        console.log(`🔄 Refetching notifications...`);
         // Refetch notifications after a short delay
         setTimeout(() => {
-          console.log(`📝 Calling refetch`);
           refetch();
         }, 500);
       }

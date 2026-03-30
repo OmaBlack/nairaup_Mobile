@@ -45,25 +45,19 @@ export const NotificationItem = memo(function NotificationItem({
   const onHandlerStateChange = (event: any) => {
     if (event.nativeEvent.state === State.END) {
       const shouldArchive = event.nativeEvent.translationX < -100;
-      
-      console.log(`🎯 Notification swipe detected, translationX: ${event.nativeEvent.translationX}`);
 
       if (shouldArchive) {
-        console.log(`✋ Swipe threshold reached! Archiving notification ${data.id}...`);
         Animated.timing(translateX, {
           toValue: -500,
           duration: 300,
           useNativeDriver: true,
         }).start(() => {
-          console.log(`💾 Setting isArchived to true for notification ${data.id}`);
           setIsArchived(true);
           if (onArchive) {
-            console.log(`📤 Calling onArchive callback with: ${data.id.toString()}`);
             onArchive(data.id.toString());
           }
         });
       } else {
-        console.log(`↩️ Not enough swipe, snapping back`);
         Animated.spring(translateX, {
           toValue: 0,
           useNativeDriver: true,

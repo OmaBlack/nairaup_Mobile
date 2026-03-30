@@ -20,6 +20,7 @@ const HomeTabHeader = () => {
   const { data: connectionSummaryData } = useGetConnectionsSummaryQuery({
     //@ts-ignore
     profileid: profile.id,
+    deleted: 0,
   });
 
   return (

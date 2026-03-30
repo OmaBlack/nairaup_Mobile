@@ -50,11 +50,22 @@ export default function MessagingScreen({
 
   useFocusEffect(
     useCallback(() => {
+      // Reset unread messages when opening chat
+      updateConnection(
+        {
+          connectionstring: `${connectionstring}`,
+        },
+        {
+          totalunreadmessages: 0,
+        },
+      );
+
       dispatch(
         reduxApiRequests.endpoints.getConnectionsSummary.initiate(
           {
             //@ts-ignore
             profileid: profile.id,
+            deleted: 0,
           },
           {
             forceRefetch: true,
@@ -149,7 +160,9 @@ export default function MessagingScreen({
           );
         }
       })
-      .catch((e) => console.log(e));
+      .catch((e) => {
+        // handle error silently
+      });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
