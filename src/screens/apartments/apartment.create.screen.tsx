@@ -1,5 +1,6 @@
 import React from "react";
 import { StyleSheet, View } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { RootStackScreenProps } from "src/types/navigation.types";
 import { Image, SafeAreaView, Text } from "src/components/themed.components";
 import { colorPrimary, colorWhite } from "src/constants/colors.constants";
@@ -12,6 +13,7 @@ export default function ApartmentCreateScreen({
   route,
 }: RootStackScreenProps<"ApartmentCreateScreen">) {
   const type = route.params.type;
+  const insets = useSafeAreaInsets();
 
   const doNext = () => {
     if (type === "job") navigation.replace("JobCreateNextScreen");
@@ -22,7 +24,7 @@ export default function ApartmentCreateScreen({
   };
 
   return (
-    <SafeAreaView style={styles.container} edges={[]}>
+    <SafeAreaView style={styles.container} edges={["top", "left", "right", "bottom"]}>
       {type === "apartment" || type === "job" ? (
         <Text
           align="center"
@@ -79,13 +81,15 @@ export default function ApartmentCreateScreen({
           />
         </View>
       </View>
-      <Button
-        title={"Create Listing"}
-        onPress={doNext}
-        wrapperStyle={{
-          marginHorizontal: layoutConstants.mainViewHorizontalPadding,
-        }}
-      />
+      <View style={{ paddingBottom: Math.max(fontUtils.h(20), insets.bottom) }}>
+        <Button
+          title={"Create Listing"}
+          onPress={doNext}
+          wrapperStyle={{
+            marginHorizontal: layoutConstants.mainViewHorizontalPadding,
+          }}
+        />
+      </View>
     </SafeAreaView>
   );
 }
@@ -94,7 +98,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     paddingHorizontal: 0,
-    paddingBottom: fontUtils.h(20),
   },
   slideAStyle: {
     height: fontUtils.h(293),
