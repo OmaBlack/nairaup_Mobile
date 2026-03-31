@@ -50,16 +50,6 @@ export default function MessagingScreen({
 
   useFocusEffect(
     useCallback(() => {
-      // Reset unread messages when opening chat
-      updateConnection(
-        {
-          connectionstring: `${connectionstring}`,
-        },
-        {
-          totalunreadmessages: 0,
-        },
-      );
-
       dispatch(
         reduxApiRequests.endpoints.getConnectionsSummary.initiate(
           {
@@ -77,11 +67,23 @@ export default function MessagingScreen({
         (json) => {
           const res = JSON.parse(json || "{}");
           const data = res?.data || [];
-          const lastMessageDateAndTime = res?.lastMessageDateAndTime
-            ? res?.lastMessageDateAndTime
-            : moment().subtract(1, "year").unix();
+          // Only use the cached timestamp when messages exist in cache.
+          // If data is empty (fresh user or corrupted cache), reset to 1 year
+          // ago so the Firestore listener returns all historical messages.
+          const lastMessageDateAndTime =
+            data.length > 0 && res?.lastMessageDateAndTime
+              ? res.lastMessageDateAndTime
+              : moment().subtract(1, "year").unix();
           setLastSavedMessageDateTime(lastMessageDateAndTime);
           setMessages([...data]);
+
+          // Only reset unread count. NEVER send lastmessage here — the
+          // cached data is what the receiver already read, overwriting would
+          // replace the sender's latest message with stale text.
+          updateConnection(
+            { connectionstring: `${connectionstring}` },
+            { totalunreadmessages: 0 },
+          );
         },
       );
       const unsubscribe = async () => {};
@@ -90,6 +92,9 @@ export default function MessagingScreen({
   );
 
   const saveChatsToHistory = async () => {
+    // Never overwrite the cache with an empty message list – this would
+    // corrupt lastMessageDateAndTime and cause future loads to miss messages.
+    if (chatMessages.length === 0) return;
     await SecureStoreManager.saveItemToAsyncStorage(
       `${connectionstring}`,
       JSON.stringify({
@@ -113,21 +118,13 @@ export default function MessagingScreen({
       );
       const listener = onSnapshot(
         _query,
-        {
-          includeMetadataChanges: true,
-        },
+        { includeMetadataChanges: true },
         (snapshot) => {
-          snapshot.docChanges().forEach(async (change) => {
+          snapshot.docChanges().forEach((change) => {
             const data: any = change.doc.data();
             if (change.type === "added") {
-              const newMessage = [
-                {
-                  ...data,
-                  received: true,
-                },
-              ];
               setMessages((previousMessages: any) =>
-                GiftedChat.append(previousMessages, newMessage),
+                GiftedChat.append(previousMessages, [{ ...data, received: true }]),
               );
             }
           });
@@ -147,24 +144,12 @@ export default function MessagingScreen({
       time: moment().unix(),
       firebaseCreatedAt: messages[0].createdAt,
       sent: true,
-    })
-      .then((saved: boolean) => {
-        if (saved) {
-          updateConnection(
-            {
-              connectionstring: `${connectionstring}`,
-            },
-            {
-              lastmessage: messages[0].text,
-            },
-          );
-        }
-      })
-      .catch((e) => {
-        // handle error silently
-      });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+    });
+    updateConnection(
+      { connectionstring: `${connectionstring}` },
+      { lastmessage: messages[0].text },
+    );
+  }, [chatPath, connectionstring, saveChat, updateConnection]);
 
   return (
     <SafeAreaView style={styles.container}>

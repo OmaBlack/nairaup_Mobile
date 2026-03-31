@@ -1,5 +1,5 @@
 import { useNavigation } from "@react-navigation/native";
-import { Avatar } from "@rneui/themed";
+import { Avatar, Badge } from "@rneui/themed";
 import { Image } from "expo-image";
 import moment from "moment";
 import React, { memo, useRef, useState } from "react";
@@ -108,27 +108,48 @@ export const ChatListItem = memo(function ChatListItem({
               })
             }
           >
-            <View style={[layoutConstants.styles.rowView]}>
-              <ViewableAvatar
-                size={fontUtils.h(35)}
-                rounded
-                source={{
-                  uri: data?.connection?.avatarurl,
-                }}
-                ImageComponent={Image}
-              />
-              <View>
-                <Text ml={fontUtils.w(10)} fontFamily={fontUtils.manrope_medium}>
-                  {`${data?.connection?.firstname} ${data?.connection?.lastname}`}
+            <View style={styles.chatListItemRowStyle}>
+              <View style={[layoutConstants.styles.rowView, { flex: 1 }]}>
+                <ViewableAvatar
+                  size={fontUtils.h(35)}
+                  rounded
+                  source={{
+                    uri: data?.connection?.avatarurl,
+                  }}
+                  ImageComponent={Image}
+                />
+                <View style={{ flex: 1 }}>
+                  <Text ml={fontUtils.w(10)} fontFamily={fontUtils.manrope_medium} numberOfLines={1}>
+                    {`${data?.connection?.firstname} ${data?.connection?.lastname}`}
+                  </Text>
+                  <Text
+                    ml={fontUtils.w(10)}
+                    size={fontUtils.h(12)}
+                    numberOfLines={1}
+                    fontFamily={
+                      data?.totalunreadmessages > 0
+                        ? fontUtils.manrope_semibold
+                        : fontUtils.manrope_regular
+                    }
+                  >
+                    {data?.lastmessage || "No message"}
+                  </Text>
+                </View>
+              </View>
+              <View style={styles.chatListItemMetaStyle}>
+                <Text size={fontUtils.h(9)} align="right">
+                  {moment(data?.lastmessagedatetime).format("MMM DD, hh:mma")}
                 </Text>
-                <Text ml={fontUtils.w(10)} size={fontUtils.h(12)} numberOfLines={2}>
-                  {data?.lastmessage || "No message"}
-                </Text>
+                {data?.totalunreadmessages > 0 && (
+                  <Badge
+                    value={data.totalunreadmessages}
+                    containerStyle={styles.unreadBadgeContainerStyle}
+                    badgeStyle={styles.unreadBadgeStyle}
+                    textStyle={styles.unreadBadgeTextStyle}
+                  />
+                )}
               </View>
             </View>
-            <Text size={fontUtils.h(9)} align="right">
-              {moment(data?.lastmessagedatetime).format("MMM DD, YYYY hh:mma")}
-            </Text>
           </TouchableOpacity>
         </Animated.View>
       </PanGestureHandler>
@@ -222,6 +243,28 @@ const styles = StyleSheet.create({
     borderBottomColor: "rgba(0, 0, 0, 0.1)",
     paddingBottom: fontUtils.h(5),
     backgroundColor: "white",
+  },
+  chatListItemRowStyle: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+  chatListItemMetaStyle: {
+    alignItems: "flex-end",
+    marginLeft: fontUtils.w(8),
+  },
+  unreadBadgeContainerStyle: {
+    marginTop: fontUtils.h(4),
+  },
+  unreadBadgeStyle: {
+    backgroundColor: colorPrimary,
+    minWidth: fontUtils.h(18),
+    height: fontUtils.h(18),
+    borderRadius: fontUtils.h(9),
+  },
+  unreadBadgeTextStyle: {
+    fontSize: fontUtils.h(10),
+    fontFamily: fontUtils.manrope_semibold,
   },
   dayWrapperStyle: {
     backgroundColor: "transparent",

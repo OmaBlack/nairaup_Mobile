@@ -1,5 +1,6 @@
 import React, { useCallback, useState } from "react";
 import { StyleSheet, View, Alert } from "react-native";
+import { useFocusEffect } from "@react-navigation/native";
 import { RootStackScreenProps } from "src/types/navigation.types";
 import { SafeAreaView, Text, TouchableOpacity } from "src/components/themed.components";
 import layoutConstants from "src/constants/layout.constants";
@@ -19,17 +20,31 @@ export default function ChatListScreen({
   const [activeTab, setActiveTab] = useState<"active" | "archived">("active");
   const [archiveConnection] = useArchiveConnectionMutation();
 
-  const { data: activeData, isLoading: activeLoading, refetch: refetchActive } = useGetConnectionsQuery({
-    //@ts-ignore
-    profileid: profile.id,
-    deleted: 0,
-  });
+  const { data: activeData, isLoading: activeLoading, refetch: refetchActive } = useGetConnectionsQuery(
+    {
+      //@ts-ignore
+      profileid: profile.id,
+      deleted: 0,
+    },
+    { pollingInterval: 8000 },
+  );
 
-  const { data: archivedData, isLoading: archivedLoading, refetch: refetchArchived } = useGetConnectionsQuery({
-    //@ts-ignore
-    profileid: profile.id,
-    deleted: 1,
-  });
+  const { data: archivedData, isLoading: archivedLoading, refetch: refetchArchived } = useGetConnectionsQuery(
+    {
+      //@ts-ignore
+      profileid: profile.id,
+      deleted: 1,
+    },
+    { pollingInterval: 8000 },
+  );
+
+  // Refetch every time this screen gains focus so "last message" is always fresh
+  useFocusEffect(
+    useCallback(() => {
+      refetchActive();
+      refetchArchived();
+    }, [refetchActive, refetchArchived]),
+  );
 
   const isLoading = activeTab === "active" ? activeLoading : archivedLoading;
   const currentData = activeTab === "active" ? activeData : archivedData;

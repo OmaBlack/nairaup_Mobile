@@ -42,6 +42,7 @@ export const useConnection = () => {
     data: {
       lastmessage?: string;
       openchat?: boolean;
+      totalunreadmessages?: number;
     },
     cb = () => {},
   ): Promise<NetworkResponse> => {

@@ -1,5 +1,6 @@
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { StyleSheet, useWindowDimensions } from "react-native";
+import { useFocusEffect } from "@react-navigation/native";
 import { TabView, SceneMap, TabBar } from "react-native-tab-view";
 import { RootStackScreenProps } from "src/types/navigation.types";
 import { SafeAreaView } from "src/components/themed.components";
@@ -11,6 +12,8 @@ import ServicesTabScreen from "./tabs/services.tab";
 import { usePage } from "src/providers/page.provider";
 import HotelsTabScreen from "./tabs/hotels.tab";
 import JobsTabScreen from "./tabs/job.tab";
+import { reduxApiRequests } from "src/services/redux/apis";
+import { useAppDispatch, useAppSelector } from "src/hooks/useReduxHooks";
 
 const routes = [
   { key: "all", title: "All" },
@@ -27,6 +30,23 @@ export default function HomeTabScreen({
   const layout = useWindowDimensions();
   const [index, setIndex] = useState(0);
   const { setPage } = usePage();
+  const dispatch = useAppDispatch();
+  const { profile } = useAppSelector((state) => state.auth.user);
+
+  // Refetch chat unread count every time this screen is focused.
+  // This is the reliable place to do it — HomeTabHeader is a navigator
+  // header component and useFocusEffect doesn't fire reliably inside it.
+  useFocusEffect(
+    useCallback(() => {
+      dispatch(
+        reduxApiRequests.endpoints.getConnectionsSummary.initiate(
+          //@ts-ignore
+          { profileid: profile.id, deleted: 0 },
+          { forceRefetch: true, subscribe: false },
+        ),
+      );
+    }, [dispatch, profile.id]),
+  );
 
   useEffect(() => {
     setPage(routes[index].key);

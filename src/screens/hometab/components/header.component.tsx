@@ -17,11 +17,17 @@ const HomeTabHeader = () => {
   const navigation = useNavigation();
   const { profile } = useAppSelector((state) => state.auth.user);
 
-  const { data: connectionSummaryData } = useGetConnectionsSummaryQuery({
-    //@ts-ignore
-    profileid: profile.id,
-    deleted: 0,
-  });
+  const { data: connectionSummaryData } =
+    useGetConnectionsSummaryQuery(
+      {
+        //@ts-ignore
+        profileid: profile.id,
+        deleted: 0,
+      },
+      {
+        pollingInterval: 8000,
+      },
+    );
 
   return (
     <View style={[styles.wrapperStyle]}>
