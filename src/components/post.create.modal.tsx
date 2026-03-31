@@ -1,108 +1,108 @@
-import React, { useEffect, useRef } from "react";
-import { DeviceEventEmitter, View } from "react-native";
-import { Modalize } from "react-native-modalize";
+import React, { useEffect, useState } from "react";
+import {
+  DeviceEventEmitter,
+  Modal,
+  Pressable,
+  StyleSheet,
+  View,
+} from "react-native";
 import { APP_SHOW_ADD_POST_MODAL } from "src/constants/app.constants";
-import { Icon, Image, Text, TouchableOpacity } from "./themed.components";
+import { Icon, Text } from "./themed.components";
 import fontUtils, { deivceWidth } from "src/utils/font.utils";
-import { StyleSheet } from "react-native";
 import { useNavigation } from "@react-navigation/native";
+import { Image as ExpoImage } from "expo-image";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 const itemWidth = (deivceWidth - fontUtils.w(60)) / 3;
-export default function CreatePostModal({}: {}) {
-  const modalRef = useRef<Modalize>(null);
-  const navigation = useNavigation();
-  const pendingNav = useRef<(() => void) | null>(null);
 
-  const showModal = (e: any) => {
-    modalRef.current?.open();
-  };
+const ITEMS = [
+  {
+    label: "Apartment listing",
+    image: require("src/assets/images/icons/fluent-emoji_house.png"),
+    type: "apartment",
+  },
+  {
+    label: "Hotel listing",
+    image: require("src/assets/images/icons/fxemoji_hotel.png"),
+    type: "hotel",
+  },
+  {
+    label: "Job listing",
+    image: require("src/assets/images/icons/streamline-ultimate-color_job-seach-woman.png"),
+    type: "job",
+  },
+] as const;
+
+export default function CreatePostModal() {
+  const [visible, setVisible] = useState(false);
+  const navigation = useNavigation();
+  const insets = useSafeAreaInsets();
 
   useEffect(() => {
-    DeviceEventEmitter.addListener(APP_SHOW_ADD_POST_MODAL, showModal);
-    return () => {
-      DeviceEventEmitter.removeAllListeners(APP_SHOW_ADD_POST_MODAL);
-    };
+    const listener = DeviceEventEmitter.addListener(
+      APP_SHOW_ADD_POST_MODAL,
+      () => setVisible(true),
+    );
+    return () => listener.remove();
   }, []);
 
+  const handleItemPress = (type: "apartment" | "hotel" | "job") => {
+    setVisible(false);
+    setTimeout(() => {
+      navigation.navigate("ApartmentCreateScreen", { type });
+    }, 250);
+  };
+
   return (
-    <Modalize
-      withReactModal
-      withHandle={false}
-      adjustToContentHeight
-      ref={modalRef}
-      modalStyle={styles.modalStyle}
-      onClosed={() => {
-        if (pendingNav.current) {
-          pendingNav.current();
-          pendingNav.current = null;
-        }
-      }}
+    <Modal
+      visible={visible}
+      transparent
+      animationType="slide"
+      statusBarTranslucent
+      onRequestClose={() => setVisible(false)}
     >
-      <Icon
-        name="close-circle"
-        type="ionicon"
-        onPress={() => modalRef.current?.close()}
-        containerStyle={{
-          alignSelf: "flex-end",
-        }}
-      />
-      <Text
-        size={fontUtils.h(12)}
-        fontFamily={fontUtils.manrope_bold}
-        mb={fontUtils.h(25)}
+      <Pressable style={styles.backdrop} onPress={() => setVisible(false)} />
+      <View
+        style={[
+          styles.sheet,
+          { paddingBottom: insets.bottom + fontUtils.h(20) },
+        ]}
       >
-        Make a listing
-      </Text>
-      <View style={styles.contentStyle}>
-        {[
-          {
-            label: "Apartment listing",
-            image: require("src/assets/images/icons/fluent-emoji_house.png"),
-            onPress: () =>
-              navigation.navigate("ApartmentCreateScreen", {
-                type: "apartment",
-              }),
-          },
-          {
-            label: "Hotel listing",
-            image: require("src/assets/images/icons/fxemoji_hotel.png"),
-            onPress: () =>
-              navigation.navigate("ApartmentCreateScreen", {
-                type: "hotel",
-              }),
-          },
-          {
-            label: "Job listing",
-            image: require("src/assets/images/icons/streamline-ultimate-color_job-seach-woman.png"),
-            onPress: () =>
-              navigation.navigate("ApartmentCreateScreen", {
-                type: "job",
-              }),
-          },
-        ].map((m) => (
-          <TouchableOpacity
-            key={m.label}
-            style={styles.itemStyle}
-            onPress={() => {
-              pendingNav.current = m.onPress;
-              modalRef.current?.close();
-            }}
-          >
-            <Image
-              source={m.image}
-              style={styles.iconStyle}
-              onPress={() => {
-                pendingNav.current = m.onPress;
-                modalRef.current?.close();
-              }}
-            />
-            <Text size={fontUtils.h(10)} fontFamily={fontUtils.manrope_medium}>
-              {m.label}
-            </Text>
-          </TouchableOpacity>
-        ))}
+        <Icon
+          name="close-circle"
+          type="ionicon"
+          onPress={() => setVisible(false)}
+          containerStyle={{ alignSelf: "flex-end" }}
+        />
+        <Text
+          size={fontUtils.h(12)}
+          fontFamily={fontUtils.manrope_bold}
+          mb={fontUtils.h(25)}
+        >
+          Make a listing
+        </Text>
+        <View style={styles.contentStyle}>
+          {ITEMS.map((item) => (
+            <Pressable
+              key={item.label}
+              style={({ pressed }) => [
+                styles.itemStyle,
+                pressed && styles.itemPressed,
+              ]}
+              onPress={() => handleItemPress(item.type)}
+            >
+              <ExpoImage source={item.image} style={styles.iconStyle} />
+              <Text
+                size={fontUtils.h(10)}
+                fontFamily={fontUtils.manrope_medium}
+              >
+                {item.label}
+              </Text>
+            </Pressable>
+          ))}
+        </View>
       </View>
-    </Modalize>
+    </Modal>
   );
 }
 
@@ -111,12 +111,18 @@ export const showCreatePostModal = () => {
 };
 
 const styles = StyleSheet.create({
-  modalStyle: {
+  backdrop: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.45)",
+  },
+  sheet: {
+    backgroundColor: "#fff",
     paddingHorizontal: fontUtils.w(15),
     paddingTop: fontUtils.h(10),
+    borderTopLeftRadius: fontUtils.r(16),
+    borderTopRightRadius: fontUtils.r(16),
   },
   contentStyle: {
-    paddingBottom: fontUtils.h(50),
     flexDirection: "row",
     justifyContent: "space-between",
   },
@@ -127,6 +133,9 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     backgroundColor: "#EFF5FE",
+  },
+  itemPressed: {
+    opacity: 0.7,
   },
   iconStyle: {
     width: fontUtils.w(24),
