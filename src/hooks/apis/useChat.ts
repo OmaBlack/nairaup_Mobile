@@ -169,19 +169,36 @@ export const useChatMessages = () => {
   const [loading, setLoading] = useState(false);
   const getMessages = async (chatId: string, cb = () => {}): Promise<any> => {
     setLoading(true);
-    const messagesCollection = collection(
-      firestoreDb,
-      `chats/${chatId}/messages`,
-    );
-    const sorted = query(
-      messagesCollection,
-      orderBy("firebaseCreatedAt", "desc"),
-    );
-    const request = await getDocs(sorted);
-    const messages = request.docs.map((doc) => doc.data());
-    setLoading(false);
-    cb();
-    return messages;
+    try {
+      const messagesCollection = collection(
+        firestoreDb,
+        `chats/${chatId}/messages`,
+      );
+      // Fetch all messages ordered by firebaseCreatedAt ascending (oldest first)
+      const sorted = query(
+        messagesCollection,
+        orderBy("firebaseCreatedAt", "asc"),
+      );
+      const request = await getDocs(sorted);
+      const messages = request.docs.map((doc) => {
+        const data = doc.data();
+        // Ensure messages have required GiftedChat fields
+        return {
+          ...data,
+          _id: data._id || doc.id,
+          createdAt: data.firebaseCreatedAt || data.createdAt,
+          user: data.user || { _id: data.user?._id, name: "", avatar: "" },
+        };
+      });
+      setLoading(false);
+      cb();
+      return messages;
+    } catch (error) {
+      console.error("Error fetching messages:", error);
+      setLoading(false);
+      cb();
+      return [];
+    }
   };
   return { getMessages, loading };
 };

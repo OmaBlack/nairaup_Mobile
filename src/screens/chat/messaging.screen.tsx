@@ -79,9 +79,18 @@ export default function MessagingScreen({
           try {
             const allMessages = await getMessages(connectionstring);
             if (allMessages && allMessages.length > 0) {
-              setMessages(allMessages);
+              // Sort messages in ascending order (oldest first) for GiftedChat
+              const sortedMessages = allMessages.sort((a: any, b: any) => {
+                const timeA = a.firebaseCreatedAt?.toMillis?.() || new Date(a.firebaseCreatedAt).getTime() || a.time || 0;
+                const timeB = b.firebaseCreatedAt?.toMillis?.() || new Date(b.firebaseCreatedAt).getTime() || b.time || 0;
+                return timeA - timeB;
+              });
+              setMessages(sortedMessages);
             }
-          } catch (_) {}
+          } catch (error) {
+            console.error("Error fetching messages from Firestore:", error);
+            // Keep showing cached data if fetch fails
+          }
           updateConnection(
             { connectionstring: `${connectionstring}` },
             { totalunreadmessages: 0 },
@@ -115,19 +124,29 @@ export default function MessagingScreen({
       const messagesCollection = collection(firestoreDb, chatPath);
       const _query = query(
         messagesCollection,
-        where("time", ">", lastSavedMessageDateTime),
-        orderBy("time", "asc"),
+        where("firebaseCreatedAt", ">", new Date(lastSavedMessageDateTime)),
+        orderBy("firebaseCreatedAt", "asc"),
       );
       const listener = onSnapshot(
         _query,  
-        { includeMetadataChanges: true },
+        { includeMetadataChanges: false },
         (snapshot) => {
           snapshot.docChanges().forEach((change) => {
             const data: any = change.doc.data();
             if (change.type === "added") {
-              setMessages((previousMessages: any) =>
-                GiftedChat.append(previousMessages, [{ ...data, received: true }]),
-              );
+              // Only add if not already present (deduplicate)
+              setMessages((previousMessages: any) => {
+                const exists = previousMessages.some((msg: any) => msg._id === data._id);
+                if (exists) return previousMessages;
+                
+                // Ensure message has proper structure for GiftedChat
+                const formattedMessage = {
+                  ...data,
+                  _id: data._id || data.createdAt,
+                  received: data.sent ? false : true, // Only mark as received if it wasn't sent by current user
+                };
+                return GiftedChat.append(previousMessages, [formattedMessage]);
+              });
             }
           });
         },
@@ -144,13 +163,19 @@ export default function MessagingScreen({
       { connectionstring: `${connectionstring}` },
       { lastmessage: messages[0].text },
     );
-    saveChat(chatPath, {
+    
+    // Ensure message has all required fields for proper Firestore storage and retrieval
+    const messageToSave = {
       ...messages[0],
+      _id: messages[0]._id || messages[0].createdAt,
       createdAt: `${messages[0].createdAt}`,
-      time: moment().unix(),
       firebaseCreatedAt: messages[0].createdAt,
+      time: moment().unix(), // Unix timestamp for listener query
       sent: true,
-    });
+      received: false,
+    };
+    
+    saveChat(chatPath, messageToSave);
   }, [chatPath, connectionstring, saveChat, updateConnection]);
 
   return (
