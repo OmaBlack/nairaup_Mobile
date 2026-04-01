@@ -105,6 +105,7 @@ export const ChatListItem = memo(function ChatListItem({
                   ...data?.connection,
                 },
                 connectionstring: data?.connectionstring,
+                lastmessage: data?.lastmessage,
               })
             }
           >

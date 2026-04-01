@@ -19,6 +19,7 @@ import {
 } from "src/types/query.types";
 import { NetworkResponse } from "src/types/request.types";
 import SecureStoreManager from "src/utils/securestoremanager.utils";
+import { useGetJobsQuery } from "./unauth.api.requests";
 
 export const reduxApiRequests = createApi({
   tagTypes: ["Notifications", "Connections"],
@@ -220,4 +221,6 @@ export const {
   useArchiveConnectionMutation,
   useArchiveNotificationMutation,
 } = reduxApiRequests;
+
+export { useGetJobsQuery };
 

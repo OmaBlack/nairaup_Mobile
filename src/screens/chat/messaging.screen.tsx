@@ -23,7 +23,7 @@ import {
   where,
 } from "firebase/firestore";
 import firestoreDb from "src/utils/firebase.utils";
-import { useChat, useConnection } from "src/hooks/apis/useChat";
+import { useChat, useConnection, useChatMessages } from "src/hooks/apis/useChat";
 import { useAppDispatch, useAppSelector } from "src/hooks/useReduxHooks";
 import layoutConstants from "src/constants/layout.constants";
 import { reduxApiRequests } from "src/services/redux/apis";
@@ -39,6 +39,7 @@ export default function MessagingScreen({
 
   const { saveChat } = useChat();
   const { updateConnection } = useConnection();
+  const { getMessages } = useChatMessages();
 
   const [messages, setMessages] = useState<any[]>([]);
   const [lastSavedMessageDateTime, setLastSavedMessageDateTime] =
@@ -64,22 +65,23 @@ export default function MessagingScreen({
         ),
       );
       SecureStoreManager.getItemFromAsyncStorage(`${connectionstring}`).then(
-        (json) => {
+        async (json) => {
           const res = JSON.parse(json || "{}");
-          const data = res?.data || [];
-          // Only use the cached timestamp when messages exist in cache.
-          // If data is empty (fresh user or corrupted cache), reset to 1 year
-          // ago so the Firestore listener returns all historical messages.
+          const cachedData = res?.data || [];
           const lastMessageDateAndTime =
-            data.length > 0 && res?.lastMessageDateAndTime
+            cachedData.length > 0 && res?.lastMessageDateAndTime
               ? res.lastMessageDateAndTime
               : moment().subtract(1, "year").unix();
           setLastSavedMessageDateTime(lastMessageDateAndTime);
-          setMessages([...data]);
-
-          // Only reset unread count. NEVER send lastmessage here — the
-          // cached data is what the receiver already read, overwriting would
-          // replace the sender's latest message with stale text.
+          // Always show cache immediately so screen is never blank
+          setMessages([...cachedData]);
+          // Then try to fetch all messages from Firestore on top
+          try {
+            const allMessages = await getMessages(connectionstring);
+            if (allMessages && allMessages.length > 0) {
+              setMessages(allMessages);
+            }
+          } catch (_) {}
           updateConnection(
             { connectionstring: `${connectionstring}` },
             { totalunreadmessages: 0 },
@@ -117,7 +119,7 @@ export default function MessagingScreen({
         orderBy("time", "asc"),
       );
       const listener = onSnapshot(
-        _query,
+        _query,  
         { includeMetadataChanges: true },
         (snapshot) => {
           snapshot.docChanges().forEach((change) => {
@@ -138,6 +140,10 @@ export default function MessagingScreen({
   }, [lastSavedMessageDateTime, chatPath]);
 
   const onSend = useCallback((messages: any = []) => {
+    updateConnection(
+      { connectionstring: `${connectionstring}` },
+      { lastmessage: messages[0].text },
+    );
     saveChat(chatPath, {
       ...messages[0],
       createdAt: `${messages[0].createdAt}`,
@@ -145,10 +151,6 @@ export default function MessagingScreen({
       firebaseCreatedAt: messages[0].createdAt,
       sent: true,
     });
-    updateConnection(
-      { connectionstring: `${connectionstring}` },
-      { lastmessage: messages[0].text },
-    );
   }, [chatPath, connectionstring, saveChat, updateConnection]);
 
   return (

@@ -87,6 +87,7 @@ export type RootStackParamList = AuthScreensParamList &
     MessagingScreen: {
       profile: Partial<ProfileObjectType>;
       connectionstring: string;
+      lastmessage?: string;
     };
     ChatListScreen: undefined;
 
@@ -168,7 +169,7 @@ export type RootTabScreenProps<Screen extends keyof RootTabParamList> =
     BottomTabScreenProps<RootTabParamList, Screen>,
     NativeStackScreenProps<RootStackParamList>
   >;
-
+                          
 export type RenderProps = {
   name: keyof RootStackParamList;
   component: FunctionComponent<any>;

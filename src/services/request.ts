@@ -155,7 +155,7 @@ export async function requestClan({
   // Get API base URL dynamically at request time
   const API_BASE_URL = "https://api.nairaup.com/api/v1";
   // const API_BASE_URL = "http://192.168.100.238:3335/api/v1";
-
+                                 
   if (__DEV__)
     console.log(
       "✅ Making axios request",

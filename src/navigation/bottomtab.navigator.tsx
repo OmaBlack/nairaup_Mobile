@@ -89,7 +89,7 @@ function ProfileTabNavigator() {
         return renderTabsScreen(route);
       })}
     </InTabStack.Navigator>
-  );
+  );                                                                                         
 }
 
 export function BottomTabNavigator() {
@@ -110,7 +110,7 @@ export function BottomTabNavigator() {
   React.useEffect(() => {
     checkJWT().then((r) => {
       if (r.code !== 200) dispatch(logout());
-    });
+    }); 
   }, []);
 
   const { data: jobsData } = useGetJobsApplicationsQuery({
