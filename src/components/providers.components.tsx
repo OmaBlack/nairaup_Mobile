@@ -53,6 +53,7 @@ export const ServiceProvidersItem = ({
             fontFamily={fontUtils.manrope_bold}
             mt={fontUtils.h(5)}
             numberOfLines={1}
+            style={{ paddingRight: fontUtils.w(30), flex: 1 }}
           >
             {`${profile.firstname} ${profile.lastname}`}
           </Text>

@@ -140,6 +140,7 @@ export const ApartmentListingItem = memo(function ApartmentListingItem(
             fontFamily={fontUtils.manrope_bold}
             mt={fontUtils.h(5)}
             numberOfLines={1}
+            style={{ paddingRight: fontUtils.w(30) }}
           >
             {title}
           </Text>

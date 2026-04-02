@@ -162,6 +162,7 @@ export const JobListingHorizontalItem = memo(function JobListingHorizontalItem(
             numberOfLines={1}
             size={fontUtils.h(12)}
             fontFamily={fontUtils.manrope_medium}
+            style={{ paddingRight: fontUtils.w(30) }}
           >
             {data.role}
           </Text>
